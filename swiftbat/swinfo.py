@@ -124,7 +124,8 @@ sqlite3.register_converter("boolean",convert_boolean)
 
 
 
-basecatalog = os.path.join(execdir,"basecatalog")
+basecatalog = os.path.join(execdir,"catalog")
+# FIXME should be handled by dotswift
 catalogdir="/Volumes/Data/Swift/analysis/sourcelist"
 newcatalogfile = os.path.join(catalogdir,"newcatalog")
 cataloglist = [os.path.join(catalogdir,"trumpcatalog"),
@@ -141,11 +142,11 @@ atm_thickness = 100e3   # How deep in the atmosphere you should report attenuati
 
 # define machineReadable=False
 
-# URL is never used (updates handled by ...swift-trend/getit)
+# URL is never used on David Palmer's machine (updates handled by ...swift-trend/getit)
 clockurl="ftp://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
 
 
-#this should be derived from the dotswift params
+# FIXME this should be derived from the dotswift params
 clocklocaldir="/Volumes/Data/Swift/swift-trend/clock/"
 if not os.path.exists(clocklocaldir) :
     clocklocaldir = "/tmp/swiftclock"
@@ -399,7 +400,7 @@ def batExposure(theta, phi) :
     phi = angle around boresight in radians.
     This is moderate accuracy, but does not take into account, e.g. dead detectors.
     """
-    if math.sin(theta) < 0 :
+    if math.cos(theta) < 0 :
         return (0.0,math.cos(theta))
     # BAT dimensions
     detL = 286 * 4.2e-3  ## Amynote: each det element is has length 4.2e-3 m
