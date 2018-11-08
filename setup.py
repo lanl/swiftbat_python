@@ -17,7 +17,7 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
 
 setup(
     name='swiftbat_python',
-    version='0.1a1',
+    version='0.1a2',
     packages=['swiftbat'],
     url='',
     license='BSD-3-Clause',

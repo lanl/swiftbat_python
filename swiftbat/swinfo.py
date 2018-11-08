@@ -36,12 +36,6 @@ if not execdir in map(os.path.abspath,sys.path) :
 import re
 import datetime
 import shutil
-from string import *
-try:
-    from StringIO import StringIO
-except:
-    # In 2.7, io.StringIO causes trouble with Unicode
-    from io import StringIO
 
 
 import glob
@@ -53,13 +47,26 @@ import time
 import math
 from  . import swutil
 
-# python3
+
+
+# python 2/3 adaptors
+try:
+    maketrans = str.maketrans
+except AttributeError:
+    from string import maketrans
+
+split_translate = maketrans("][, \t;","      ")
+
+try:
+    from StringIO import StringIO
+except:
+    # In 2.7, io.StringIO causes trouble with Unicode
+    from io import StringIO
+
 try:
     _str = basestring
 except NameError:
     _str = str
-
-# import swiftcache   # takes about 7 seconds, might want to remove or streamline
 
 if 0 :
     swanaldir = "/usr/local/src/swiftanal"
@@ -68,6 +75,12 @@ if 0 :
     
     batstudiesdir = "/Users/palmer/repo/scheme/batstudies"
     sys.path.append(batstudiesdir)
+
+# Running into certificate problems from 2018-10-23 for
+# https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error
+
+import ssl
+unsafe_context = ssl._create_unverified_context()
 
 try :
     from urllib2 import urlopen
@@ -738,7 +751,7 @@ class pointingTable :
         if verbose:
             print(u)
         try :
-            s = BeautifulSoup.BeautifulSoup(urlopen(u,None,30),"html.parser")
+            s = BeautifulSoup.BeautifulSoup(urlopen(u,None,30, context=unsafe_context),"html.parser")
             table=s.find('table', {"class":"ppst"}) # Even the as-flown table has class ppst
             for row in table.findAll('tr') :
                 try :
@@ -1085,13 +1098,13 @@ def usage(progname) :
     print("            --visible                   Only when the source is in the FOV")
     print("        -x --excelvis                   source visibility list in CSV Excelable format (grep vis)")
     # print("        -m --machine                    machine-convenient format with printouts on single lines")
-    print("        -p --position ""ra_deg dec_deg""    position visibility")
+    print("        -p --position \"ra_deg dec_deg\"  position visibility")
     print("        -t --timerange                  use all pointings in the range of times")
     print("           --steptime seconds           cover the range fo times with this interval")
     print("        -c --clipboard                  use times in the current clipboard")
     print("        -f --format '%Y-%m-%dT%H:%M:%S' use given time format.  (Example is default)")
     print("        -P --ppst   ppstfile            use local PPST file instead of getting from web")
-    print("        -a --attitude ra,dec,roll       manually include an attitude rather than PPST")
+    print("        -a --attitude \"ra dec roll\"     manually include an attitude rather than PPST")
     print("           --notice                     process GCN notice piped to stdin to extract time and position")
     # print("           --METonly                    print out nothing but the MET")
     # print("           --UTConly                    print out nothing but the UTC")
@@ -1178,7 +1191,7 @@ def main(argv = None, debug=None) :
                 format = v
             elif o in ("-p","--position") :
                 try :
-                    ra,dec = [ephem.degrees(s) for s in v.split()]
+                    ra,dec = [ephem.degrees(s) for s in v.translate(split_translate).split()]
                     string="|||%s||%d||||%f|%f|" % (v,len(sources),ra/ephem.degree,dec/ephem.degree)
                     newsource = source(string)
                     sources.append(newsource)
@@ -1188,7 +1201,7 @@ def main(argv = None, debug=None) :
             elif o in ("-P", "--ppst") :
                 ppstfile.append(v)
             elif o in ("-a", "-attitude") :
-                vsplit=v.translate(maketrans("][, \t;","      ")).split()
+                vsplit=v.translate(split_translate).split()
                 try :
                     ra=float(vsplit[0])
                     dec=float(vsplit[1])
