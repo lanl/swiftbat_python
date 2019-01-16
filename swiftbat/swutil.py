@@ -37,7 +37,7 @@ if not execdir in map(os.path.abspath,sys.path) :
 
 import re
 import datetime
-from . import swinfo
+from .clockinfo import utcf
 import io
 
 # 2004-12-05T19:43:27
@@ -164,7 +164,7 @@ def string2datetime(s, nocomplaint = False, correct = False) :
         # None of the patterns match, try treating it as a straight number of seconds
         met = float(s)
         if correct :
-            utcf=swinfo.utcf(met, not nocomplaint, False)
+            utcf=utcf(met, not nocomplaint, False)
             met += utcf
         return met2datetime(met)
     except :
@@ -186,13 +186,13 @@ def timedelta2seconds(td) :
 
 def met2datetime(met, correct=False) :
     if correct :
-        met += swinfo.utcf(met, False, False)
+        met += utcf(met, False, False)
     return swiftepoch + datetime.timedelta(seconds = met )
     
 def datetime2met(dt, correct=False) :
     met = timedelta2seconds(dt - swiftepoch)
     if correct :
-        met -= swinfo.utcf(met, False, False)
+        met -= utcf(met, False, False)
     return met
 
 
@@ -212,7 +212,7 @@ def met2fitsString(met, milliseconds = False, correct = False, format=fitstimefo
 
 def met2mjd(met, correct = False) :
     if correct :
-        met += swinfo.utcf(met, False, False)
+        met += utcf(met, False, False)
     deltamjd = swiftepoch - mjdepoch
     mjd = met/86400.0 + deltamjd.days + deltamjd.seconds/86400.0
     return mjd

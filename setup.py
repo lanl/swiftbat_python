@@ -17,7 +17,7 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
 
 setup(
     name='swiftbat_python',
-    version='0.1a2',
+    version='0.1a3',
     packages=['swiftbat'],
     url='',
     license='BSD-3-Clause',
@@ -26,5 +26,4 @@ setup(
     description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
     install_requires = ['beautifulsoup4', 'pyephem', 'astropy']
-
 )
