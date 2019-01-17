@@ -17,8 +17,9 @@ THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS 
 
 setup(
     name='swiftbat_python',
-    version='0.1a3',
+    version='0.1a4',
     packages=['swiftbat'],
+    package_data={'':['catalog']},
     url='',
     license='BSD-3-Clause',
     author='David M. Palmer',

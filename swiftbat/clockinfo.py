@@ -41,12 +41,9 @@ COMMENT     T1 = (T-TSTART)/86400
 COMMENT     TCORR = TOFFSET + (C0 + C1*T1 + C2*T1*T1)*1E-6
 """
 
-
 theClockData = None
 
-
-
-caveat_time = 86400*90      # print a caveat if UTCF is more than 90 days stale
+caveat_time = 86400 * 90  # print a caveat if UTCF is more than 90 days stale
 
 
 class clockErrData:
@@ -119,25 +116,26 @@ class clockErrData:
         try:
             self.updateclockfiles(clockdir)
         except Exception as e:
-            print("# ",e)
-        clockfile = clockfilelist = glob.glob(os.path.join(clockdir, self.clockfilepattern))[-1]
+            print("# ", e)
+        clockfile = glob.glob(os.path.join(clockdir, self.clockfilepattern))[-1]
         return clockfile
 
-def utcf(t, printCaveats=True, returnCaveats = False) :
+
+def utcf(t, printCaveats=True, returnCaveats=False):
     global theClockData
-    if theClockData == None :
+    if theClockData == None:
         theClockData = clockErrData()
-    try :
+    try:
         uc = [theClockData.utcf(t_) for t_ in t]
         # http://muffinresearch.co.uk/archives/2007/10/16/python-transposing-lists-with-map-and-zip/
-        u,c = map(None,*uc)
-        if printCaveats and any(c) :
+        u, c = map(None, *uc)
+        if printCaveats and any(c):
             print("\n".join(["**** " + c_ for c_ in c if c_]))
-    except TypeError :
-        u,c = theClockData.utcf(t)
-        if printCaveats and c :
+    except TypeError:
+        u, c = theClockData.utcf(t)
+        if printCaveats and c:
             print("**** " + c)
-    if returnCaveats :
-        return u,c
-    else :
+    if returnCaveats:
+        return u, c
+    else:
         return u
