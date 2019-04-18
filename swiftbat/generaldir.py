@@ -9,7 +9,7 @@ Requires that the http server be apache with autoindex.
 The ftp requirements are that the dir listing begin with the flags and end with the name
 
 David Palmer   palmer@lanl.gov
-(C) Copyright 2009 Los Alamos National Security, LLC All rights reserved
+(C) Copyright 2009 Triad National Security, LLC All rights reserved
 
 """
 
