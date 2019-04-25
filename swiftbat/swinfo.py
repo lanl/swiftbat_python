@@ -12,17 +12,21 @@ David Palmer   palmer@lanl.gov
 """
 
 """
-Copyright (c) 2018, Los Alamos National Security, LLC
+Copyright (c) 2018, Triad National Security, LLC
 All rights reserved.
  
-Copyright 2018. Los Alamos National Security, LLC. This software was produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National Laboratory (LANL), which is operated by Los Alamos National Security, LLC for the U.S. Department of Energy. The U.S. Government has rights to use, reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified to produce derivative works, such modified software should be clearly marked, so as not to confuse it with the version available from LANL.
+Copyright 2018. Triad National Security, LLC. All rights reserved.
  
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration.
+ 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+
 Additionally, redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 1.       Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 2.       Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-3.       Neither the name of Los Alamos National Security, LLC, Los Alamos National Laboratory, LANL, the U.S. Government, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+3.       Neither the name of Triad National Security, LLC, Los Alamos National Laboratory, LANL, the U.S. Government, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
  
-THIS SOFTWARE IS PROVIDED BY LOS ALAMOS NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL LOS ALAMOS NATIONAL SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL TRIAD NATIONAL SECURITY, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
@@ -47,6 +51,8 @@ import time
 import math
 from . import swutil
 from .clockinfo import utcf
+import astropy.units as u
+from astropy import coordinates
 
 # python 2/3 adaptors
 try:
@@ -171,6 +177,8 @@ verbose = False  # Verbose controls diagnositc output
 terse = False  # Terse controls the format of ordinary output
 
 
+
+# Old fashioned
 def simbadnames(query):
     """Given a source name, or other SIMBAD query, generates a list of identifier matches
        See http://simbad.u-strasbg.fr/simbad/sim-fscript
@@ -180,19 +188,38 @@ def simbadnames(query):
         quote(query),), None, 60)
     names = []
     while u:
-        l = u.readline()
+        l = u.readline().decode()
         if re.match("""^::error::*""", l):
             raise ValueError(query)
         if re.match("""^::data::*""", l):
             break
     for l in u.readlines():
-        s = l.strip().split()
+        s = l.decode().strip().split()
         if len(s) > 0:
             if s[0] == 'NAME':
                 s = s[1:]
             names.append(" ".join(s))
     return names
 
+
+# Astroquery
+def simbadlocation(objectname):
+    """
+    Location according to 
+    :param objectname: 
+    :return: (ra_deg, dec_deg)
+    """
+    from astroquery.simbad import Simbad
+    try:
+        table = Simbad.query_object(objectname)
+        if len(table) != 1:
+            raise RuntimeError(f"No unique match for {objectname}")
+        co = coordinates.SkyCoord(table['RA'][0], table['DEC'][0],
+                                  unit=(u.hour, u.deg), frame='fk5')
+        return (co.ra.degree, co.dec.degree)
+    except Exception as e:
+        raise RuntimeError(f"{e}")
+    
 
 class orbit:
     def __init__(self):
@@ -377,10 +404,23 @@ def loadsourcecat():
 
 
 class source:
-    def __init__(self, initstring):
+    def __init__(self, initstring=None, **kwargs):
+        """
+        A source location with the ability to calublate BAT-relative angles and exposure
+
+        :param initstring: String from source table, or an ephem function name (such as 'Sun')
+        :param kwargs: {ra:ra_deg, dec:dec_deg, <name:'a name'>, <catnum:catnum>}
+        """
         if initstring in ephem.__dict__:
             self.needs_computing = True
             self.computable = ephem.__dict__[initstring]()
+        elif 'ra' in kwargs and 'dec' in kwargs:
+            if initstring:
+                raise RuntimeError("Give ra=,dec= or an initstring but not both")
+            self.eq = ephem.Equatorial(kwargs['ra'] * ephem.degree,
+                                       kwargs['dec'] * ephem.degree)
+            self.name = kwargs.get('name', 'unnamed')
+            self.catnum = kwargs.get('catnum', 0)
         else:
             self.needs_computing = False
             s = initstring.split("|")
@@ -687,7 +727,7 @@ class pointingTable:
         if verbose:
             print(u)
         try:
-            s = BeautifulSoup.BeautifulSoup(urlopen(u, None, 30, context=unsafe_context), "html.parser")
+            s = BeautifulSoup.BeautifulSoup(urlopen(u, None, timeout=10, context=unsafe_context), "html.parser")
             table = s.find('table', {"class": "ppst"})  # Even the as-flown table has class ppst
             for row in table.findAll('tr'):
                 try:
@@ -699,8 +739,8 @@ class pointingTable:
                         print(text)
                     try:
                         # Crude way of checking whether the AFST is complete.  Better would be to check the time
-                        if text[0:9] == 'There may' or text[
-                                                       0:10] == 'There will':  # be later observations for this date
+                        if (text[0:9] == 'There may'
+                            or text[0:10] == 'There will'):  # be later observations for this date
                             break  # Do not execute else clause
                     except:
                         pass
