@@ -48,7 +48,8 @@ caveat_time = 86400 * 90  # print a caveat if UTCF is more than 90 days stale
 
 class clockErrData:
     # URL is never used on David Palmer's machine (updates handled by ...swift-trend/getit)
-    clockurl = "ftp://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
+    # clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
+    clockurl = "ftps://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
     # FIXME this should be derived from the dotswift params
     clocklocalsearchpath = ['/Volumes/Data/Swift/swift-trend/clock',
                             os.path.expanduser('~/.swift/swiftclock'),
@@ -91,18 +92,31 @@ class clockErrData:
         tcorr = self._toffset[row] + 1e-6 * (self._c0[row] + ddays * (self._c1[row] + ddays * self._c2[row]))
         return -tcorr, caveats
 
-    def updateclockfiles(self, clockdir, ifolderthan_days=30):
+    def updateclockfiles(self, clockdir, ifolderthan_days=30, test_days=1):
+        """
+        Update the clock files if the current clockfile is old and we haven't checked recently for new ones
+        :param clockdir:
+        :param ifolderthan_days:
+        :param test_days:
+        :return:
+        """
+        testfile = os.path.join(clockdir, "clocktest")
         try:
             clockfile = glob.glob(os.path.join(clockdir, self.clockfilepattern))[-1]
             age = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(os.path.getmtime(clockfile))
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
+            # Check no more than once a day
+            testage = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(os.path.getmtime(testfile))
+            if testage.total_seconds() < (86400 * test_days):
+                return
         except:
             pass
         # Requires wget.  If this is a problem, use ftplib.FTP
         os.system(
-            "wget -q --directory-prefix=%s --no-host --no-clobber --cut-dirs=6 -r ftp://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock"
-            % clockdir)
+            "wget -q --directory-prefix=%s --no-host --no-clobber --cut-dirs=6 -r %s"
+            % (clockdir, self.clockurl) )
+        open(testfile,'w').write(' ')
 
     def clockfile(self):
         for clockdir in self.clocklocalsearchpath:
