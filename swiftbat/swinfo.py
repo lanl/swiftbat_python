@@ -413,7 +413,7 @@ def loadsourcecat():
 class source:
     def __init__(self, initstring=None, **kwargs):
         """
-        A source location with the ability to calublate BAT-relative angles and exposure
+        A source location with the ability to calculate BAT-relative angles and exposure
 
         :param initstring: String from source table, or an ephem function name (such as 'Sun')
         :param kwargs: {ra:ra_deg, dec:dec_deg, <name:'a name'>, <catnum:catnum>}
