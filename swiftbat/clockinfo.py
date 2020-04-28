@@ -102,7 +102,7 @@ class clockErrData:
         """
         testfile = os.path.join(clockdir, "clocktest")
         try:
-            clockfile = glob.glob(os.path.join(clockdir, self.clockfilepattern))[-1]
+            clockfile = sorted(list(glob.glob(os.path.join(clockdir, self.clockfilepattern))))[-1]
             age = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(os.path.getmtime(clockfile))
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
@@ -131,7 +131,7 @@ class clockErrData:
             self.updateclockfiles(clockdir)
         except Exception as e:
             print("# ", e)
-        clockfile = glob.glob(os.path.join(clockdir, self.clockfilepattern))[-1]
+        clockfile = sorted(list(glob.glob(os.path.join(clockdir, self.clockfilepattern))))[-1]
         return clockfile
 
 
