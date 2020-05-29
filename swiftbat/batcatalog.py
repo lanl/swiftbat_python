@@ -1,6 +1,5 @@
 """
-BAT Catalog entries as derived from a bcttb.fits file (as opposed to
-the text file named 'catalog'
+BAT Catalog entries as derived from a bcttb.fits file
 """
 
 """
