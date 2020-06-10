@@ -1,7 +1,9 @@
-#! /opt/local/bin/python2.7
+#! /usr/bin/env python
 
 
 from __future__ import print_function, division, absolute_import
+
+from pathlib import Path
 
 """
 swinfo
@@ -59,6 +61,7 @@ import math
 from . import swutil
 from .clockinfo import utcf
 import astropy.units as u
+from astropy.io import fits
 from astropy import coordinates
 
 # python 2/3 adaptors
@@ -145,6 +148,7 @@ sqlite3.register_adapter(bool, adapt_boolean)
 sqlite3.register_converter("boolean", convert_boolean)
 
 basecatalog = os.path.join(execdir, "catalog")
+fitscatalog = os.path.join(execdir, "recent_bcttb.fits.gz")
 # FIXME should be handled by dotswift
 catalogdir = "/Volumes/Data/Swift/analysis/sourcelist"
 newcatalogfile = os.path.join(catalogdir, "newcatalog")
@@ -400,11 +404,11 @@ def loadsourcecat():
         if os.path.exists(cataloglist[3]):
             if verbose:
                 print("Loading catalogs:\n %s" % "\n ".join(cataloglist[0:3]))
-            sourcecat = sourcelist(cataloglist[0:3], verbose=verbose)  # Exclude newcatalog
+            sourcecat = sourcelist(cataloglist[0:3]+[fitscatfile], verbose=verbose)  # Exclude newcatalog
         else:
             if verbose:
                 print("Using old catalog %s" % (basecatalog,))
-            sourcecat = sourcelist((basecatalog,), verbose=verbose)
+            sourcecat = sourcelist((basecatalog, fitscatalog), verbose=verbose)
         if verbose:
             print("Loaded")
         # print(" ".join(sourcecat.allsources.keys()))
@@ -509,15 +513,25 @@ class sourcelist:
     def addFromFile(self, file, verbose=False):
         if verbose:
             print(file)
-        for line in open(file).readlines():
-            try:
-                aSource = source(line)
+        if ".fits" in file:
+            for row in fits.getdata(file):
+                aSource = source.source(ra=row.field('RA_OBJ'),
+                                        dec=row.field('DEC_OBJ'),
+                                        name=row.field('NAME'))
                 if verbose:
                     print(aSource)
                 # print(line,aSource.name)
                 self.allsources[self.canonName(aSource.name)] = aSource
-            except:
-                pass
+        else:
+            for line in open(file).readlines():
+                try:
+                    aSource = source(line)
+                    if verbose:
+                        print(aSource)
+                    # print(line,aSource.name)
+                    self.allsources[self.canonName(aSource.name)] = aSource
+                except:
+                    pass
 
     def byName(self, name):
         try:
