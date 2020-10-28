@@ -38,5 +38,5 @@ setup(
     author_email='palmer@lanl.gov',
     description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
-    install_requires = ['beautifulsoup4', 'pyephem', 'astropy', 'astroquery']
+    install_requires = ['beautifulsoup4', 'ephem', 'astropy', 'astroquery']
 )
