@@ -70,7 +70,7 @@ class clockErrData:
             self._c2 = f[1].data.field('C2').copy()
             f.close()
         except:
-            print("# Warning, no clock UTCF file")
+            raise RuntimeError("No clock UTCF file")
             self._clockfile = ""
 
     def utcf(self, t, trow=None):  # Returns value in seconds to be added to MET to give correct UTCF
@@ -123,14 +123,21 @@ class clockErrData:
             if os.path.exists(clockdir):
                 break
         else:
-            try:
-                os.makedirs(clockdir)
-            except FileExistsError:
-                pass
-        try:
-            self.updateclockfiles(clockdir)
-        except Exception as e:
-            print("# ", e)
+            for clockdir in self.clocklocalsearchpath:
+                if os.path.exists(os.path.dirname(clockdir)):
+                    # If the parent exists, it is ok to add the clockdir to it if possible,
+                    # but don't want to build a whole new directory tree
+                    try:
+                        os.mkdir(clockdir)
+                        break
+                    except:
+                        pass
+            else:
+                try:
+                    os.makedirs(clockdir)   # Force directory to exist in the temp directory
+                except FileExistsError:
+                    pass
+        self.updateclockfiles(clockdir)
         clockfile = sorted(list(glob.glob(os.path.join(clockdir, self.clockfilepattern))))[-1]
         return clockfile
 
