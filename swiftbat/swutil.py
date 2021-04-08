@@ -93,8 +93,16 @@ yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
 
 def string2datetime(s, nocomplaint=False, correct=False):
-    """ Given a string containing a date and time or an MET, returns a datetime,
-    which, in the case of an MET, is corrected for UTCF if correct==True"""
+    """
+    Convert a string (which may be a Swift MET) to a datetime
+
+    In the case of an MET, is corrected for UTCF if correct==True
+    :param s: string with time information
+    :param nocomplaint: Don't complain if something is wrong
+    :param correct: Include the UTCF when converting an MET to UTC
+    :return: UTC
+    :rtype: datetime.datetime
+    """
     try:
         m = reGeneral.match(s)
         if m:
