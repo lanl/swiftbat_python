@@ -3,6 +3,9 @@ from __future__ import division, print_function
 import os
 import glob
 import datetime
+import re
+from pathlib import Path
+import ftplib
 
 """
 From the FITS file:
@@ -50,6 +53,9 @@ class clockErrData:
     # URL is never used on David Palmer's machine (updates handled by ...swift-trend/getit)
     # clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
     clockurl = "ftps://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
+    clockhost = 'legacy.gsfc.nasa.gov'
+    clockhostdir = '/caldb/data/swift/mis/bcf/clock/'
+    clockfile_regex = 'swclockcor20041120v\d*.fits'
     # FIXME this should be derived from the dotswift params
     clocklocalsearchpath = ['/Volumes/Data/Swift/swift-trend/clock',
                             os.path.expanduser('~/.swift/swiftclock'),
@@ -113,10 +119,24 @@ class clockErrData:
         except:
             pass
         # Requires wget.  If this is a problem, use ftplib.FTP
-        os.system(
-            "wget -q --directory-prefix=%s --no-host --no-clobber --cut-dirs=6 -r %s"
-            % (clockdir, self.clockurl) )
-        open(testfile,'w').write(' ')
+        # os.system(
+        #     "wget -q --directory-prefix=%s --no-host --no-clobber --cut-dirs=6 -r %s"
+        #     % (clockdir, self.clockurl) )
+        try:
+            ftps = ftplib.FTP_TLS(self.clockhost)
+            ftps.login()    # anonymous
+            ftps.prot_p()   # for ftps
+            ftps.cwd(self.clockhostdir)
+            clockreg = re.compile(self.clockfile_regex)
+            ftplatest = sorted([f for f in ftps.nlst() if clockreg.match(f)])[-1]
+            locallatest = Path(clockdir).joinpath(ftplatest)
+            if not locallatest.exists():
+                with open(locallatest, "wb") as newfile:
+                    ftps.retrbinary(f'RETR {ftplatest}', newfile.write)
+            open(testfile,'w').write(' ') # touch
+        except Exception as e:
+            print(e)
+
 
     def clockfile(self):
         for clockdir in self.clocklocalsearchpath:

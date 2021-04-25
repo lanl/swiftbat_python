@@ -324,9 +324,12 @@ class orbit:
                             if verbose:
                                 print("Copying TLEs from " + obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
-                            shutil.copyfile(tlefile, tlebackup)
+                            try:
+                                shutil.copyfile(tlefile, tlebackup)
+                            except:
+                                pass
                             return
-            except:
+            except Exception as e:
                 pass
         try:
             if verbose:
