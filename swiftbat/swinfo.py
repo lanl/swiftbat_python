@@ -58,8 +58,8 @@ import traceback
 import getopt
 import time
 import math
-from . import swutil
-from .clockinfo import utcf
+from swiftbat import swutil
+from swiftbat.clockinfo import utcf
 import astropy.units as u
 from astropy.io import fits
 from astropy import coordinates
@@ -324,9 +324,12 @@ class orbit:
                             if verbose:
                                 print("Copying TLEs from " + obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
-                            shutil.copyfile(tlefile, tlebackup)
+                            try:
+                                shutil.copyfile(tlefile, tlebackup)
+                            except:
+                                pass
                             return
-            except:
+            except Exception as e:
                 pass
         try:
             if verbose:
@@ -694,7 +697,7 @@ class pointingTable:
     def getPointings(self, trange):
         try:
             tfullrange = (min(trange), max(trange))
-        except:
+        except TypeError:
             tfullrange = (trange, trange)
         if not self._explicitPPST:
             tmin = tfullrange[0] - _maxobslength
@@ -774,154 +777,6 @@ class pointingTable:
         except:
             return (None, False)
         return (pointlist, complete)
-
-    # def oldLoadDay(self, t):
-    #     day = int(t.strftime("%Y%j"))
-    #
-    #     if verbose:
-    #         print("Loading day %d " % day)
-    #     if day in self._daylist:
-    #         return True  # already loaded
-    #
-    #     aflist = glob.glob(t.strftime(asflownpattern))
-    #     if aflist and not self._explicitPPST:
-    #         if verbose:
-    #             print("Day %d in as-flown" % day)
-    #         planned = False
-    #         # indices into the line
-    #         iobs = 4
-    #         iseg = 6
-    #         ira = 10
-    #         idec = 11
-    #         iroll = 12
-    #         f = gzip.open(aflist[-1], "rb")
-    #         if verbose:
-    #             print("found ", aflist[-1])
-    #     else:
-    #         if self._explicitPPST:
-    #             pplist = self._explicitPPST
-    #         else:
-    #             pplist = glob.glob(t.strftime(preplannedpattern))
-    #         if pplist:
-    #             if verbose:
-    #                 print("Day %d in local preplanned" % day)
-    #             planned = day
-    #             iobs = 4
-    #             iseg = 5
-    #             ira = 7
-    #             idec = 8
-    #             iroll = 9
-    #             f = open(pplist[-1], 'r')
-    #             if verbose:
-    #                 print("found ", pplist[-1])
-    #         else:
-    #             if verbose:
-    #                 print("Day %d not in local preplanned" % day)
-    #             self.loadDayHTML(t)
-    #             self._daylist.append(day)  # Add now, because if it doesn't parse the file there is no point in retrying
-    #             return
-    #             # print("Could not find obstable in either of: \n%s\n%s\n" % (t.strftime(asflownpattern), t.strftime(preplannedpattern)))
-    #             # raise LookupError("Could not find obstable in either of: \n%s\n%s\n" % (t.strftime(asflownpattern), t.strftime(preplannedpattern)))
-    #     self._daylist.append(day)  # Add now, because if it doesn't parse the file there is no point in retrying
-    #     tstart = None
-    #     tslewend = None
-    #     for lcr in f.readlines():
-    #         for l in lcr.split("\r"):
-    #             try:
-    #                 ls = l.split("|")
-    #                 if len(ls) < 3:
-    #                     continue
-    #                 ls = [s.strip() for s in ls]  # Line split and stripped
-    #                 if not ls[0]:  # As-flown lines begins with a |, so eliminate the blank
-    #                     ls = ls[1:]
-    #                 # 2007-086-03:54:00[.123456]
-    #                 tl = datetime.datetime.strptime((ls[0])[0:17], "%Y-%j-%H:%M:%S")
-    #                 # print(tl,l)
-    #                 if (ls[1] == "PPT" or ls[1] == "ToO" or ls[1] == "AT"):
-    #                     if ls[1] == "ToO":
-    #                         sourcename = "ToO"
-    #                     elif ls[1] == "AT":
-    #                         sourcename = "AT"
-    #                     else:
-    #                         sourcename = ls[3]
-    #                     obs = int(ls[iobs])
-    #                     seg = int(ls[iseg])
-    #                     ra = float(ls[ira])
-    #                     dec = float(ls[idec])
-    #                     roll = float(ls[iroll])
-    #                     if ls[2] == "Begin":
-    #                         tstart = tl
-    #                     elif ls[2] == "End":
-    #                         # print(ls[2], tl, l)
-    #                         if tstart:  # Except for the first pointing of a file, this should be true
-    #                             pe = pointingEntry(tstart, tslewend, tl, ra, dec, roll, obs, seg, sourcename, planned)
-    #                             self._entries.append(pe)
-    #                             # print(pe)
-    #                         else:  # Try to splice to end of the previous day
-    #                             peList = self._findEntries(tl)
-    #                             if len(peList) == 1:
-    #                                 pe = peList[0]
-    #                                 pe._tend = tl
-    #                                 if not pe._tslewend:
-    #                                     pe._tslewend = tslewend
-    #                 if (ls[1] == "mnv" and ls[2] == "End") or (ls[1] == "Slew Settled"):
-    #                     tslewend = tl
-    #             except:
-    #                 print("Can't parse line :", l)
-    #                 traceback.print_tb(sys.exc_info()[2])
-    #
-    # def oldLoadDayHTML(self, t):
-    #     day = int(t.strftime("%Y%j"))
-    #     dirurl = t.strftime(preplannedhtmldir)
-    #     udir = generaldir.httpDir(dirurl)
-    #     if verbose:
-    #         print("Looking for Day %d preplanned on web at %s" % (day, dirurl))
-    #     files = udir.filesNoFancy()
-    #     if verbose:
-    #         print(files)
-    #     ppstmatch = re.compile("PPST.*html")
-    #     files = [f for f in files if ppstmatch.match(f)]
-    #     if verbose:
-    #         print(files)
-    #     if len(f) == 0:
-    #         raise LookupError("Could not find obstable in any of: \n%s\n%s\n%s\n" % (
-    #         t.strftime(asflownpattern), t.strftime(preplannedpattern), dirurl))
-    #     for f in files:
-    #         if verbose:
-    #             print(dirurl + "/" + f)
-    #         self.loadURLHTML(dirurl + "/" + f, day)
-    #     return
-    #
-    # def oldLoadURLHTML(self, u, day):
-    #     s = BeautifulSoup.BeautifulSoup(urlopen(u), "html.parser")
-    #     table = s.first('table')
-    #     for row in table.findAll('tr'):
-    #         tstart = 0
-    #         try:
-    #             tstart = datetime.datetime.strptime(soupCatStrings(row.contents[0], True), "%Y-%j-%H:%M:%S")
-    #             # tstart = datetime.datetime.strptime(row.contents[0].contents[1].string, "%Y-%j-%H:%M:%S")
-    #             tslewend = tstart  # Assume instant slews
-    #             tend = datetime.datetime.strptime(soupCatStrings(row.contents[1], True), "%Y-%j-%H:%M:%S")
-    #             sourcename = soupCatStrings(row.contents[2], True)
-    #             ra = float(soupCatStrings(row.contents[3], True))
-    #             dec = float(soupCatStrings(row.contents[4], True))
-    #             roll = float(soupCatStrings(row.contents[5], True))
-    #             obs = int(soupCatStrings(row.contents[6], True))
-    #             seg = int(soupCatStrings(row.contents[7], True))
-    #             planned = day
-    #             pe = pointingEntry(tstart, tslewend, tend, ra, dec, roll, obs, seg, sourcename, planned)
-    #             self._entries.append(pe)
-    #         except:
-    #             if verbose:
-    #                 print("Misread row: %s" % row)
-    #                 print("tstart=", tstart)
-    #                 try:
-    #                     print("row.contents[0]... = ", row.contents[0])
-    #                     print("catstrings of row.contents[0]... = ", soupCatStrings(row.contents[0], True))
-    #                     # print("row.contents[0]... = ",row.contents[0].contents[1].string)
-    #                 except:
-    #                     pass  # traceback.print_tb()
-    #             None
 
     def _findEntries(self, trange):
         try:
@@ -1379,9 +1234,9 @@ if __name__ == "__main__":
     # Turn on debugging
     debug = None
     debug = open("/tmp/swinfo.debug", "a")
-    if debug:
-        swutil.dumponsignal(fname="/tmp/swinfo.debug")
-        main = swutil.TeeStdoutDecorator(main, debug)
+    # if debug:
+    #     swutil.dumponsignal(fname="/tmp/swinfo.debug")
+    #     main = swutil.TeeStdoutDecorator(main, debug)
     if len(sys.argv) > 1:
         main(sys.argv, debug=debug)
     else:

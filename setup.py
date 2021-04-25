@@ -29,7 +29,7 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 
 setup(
     name='swiftbat_python',
-    version='0.1a8',
+    version='0.1a9',
     packages=['swiftbat'],
     package_data={'':['catalog', 'recent_bcttb.fits.gz']},
     url='',
@@ -38,5 +38,5 @@ setup(
     author_email='palmer@lanl.gov',
     description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
-    install_requires = ['beautifulsoup4', 'pyephem', 'astropy', 'astroquery']
+    install_requires = ['beautifulsoup4', 'ephem', 'astropy', 'astroquery']
 )
