@@ -118,7 +118,7 @@ class BATCatalog():
     @lru_cache(maxsize=0)
     def _cattable(self, catalogfilename=None):
         # Recent catalog file
-        # wget ftp://heasarc.gsfc.nasa.gov:/swift/data/trend/2019_04/bat/bcatalog/sw03109627003bcttb.fits.gz -O recent_bcttb.fits.gz
+        # wget https://heasarc.gsfc.nasa.gov/FTP/swift/data/trend/2021_05/bat/bcatalog/sw03110986012bcttb.fits.gz -O recent_bcttb.fits.gz
         if catalogfilename is None:
             catalogfilename = self.thisdir.joinpath(self.filebasename)
         catalog = fits.getdata(catalogfilename)
