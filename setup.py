@@ -29,7 +29,7 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 
 setup(
     name='swiftbat_python',
-    version='0.1a10',
+    version='0.1a11',
     packages=['swiftbat'],
     package_data={'':['catalog', 'recent_bcttb.fits.gz']},
     url='',

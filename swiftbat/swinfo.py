@@ -752,7 +752,7 @@ class pointingTable:
             print(u)
         try:
             s = BeautifulSoup.BeautifulSoup(urlopen(u, None, timeout=10, context=unsafe_context), "html.parser")
-            table = s.find('table', {"class": "ppst"})  # Even the as-flown table has class ppst
+            table = s.find('table') # , {"class": "ppst"})  # Even the as-flown table has class ppst
             for row in table.findAll('tr'):
                 try:
                     pe = pointingEntry.fromTableRow(row, preplanned)
