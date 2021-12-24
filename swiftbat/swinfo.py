@@ -3,6 +3,7 @@
 
 from __future__ import print_function, division, absolute_import
 
+import functools
 from pathlib import Path
 
 """
@@ -63,6 +64,7 @@ from swiftbat.clockinfo import utcf
 import astropy.units as u
 from astropy.io import fits
 from astropy import coordinates
+import numpy as np
 
 # python 2/3 adaptors
 try:
@@ -164,9 +166,6 @@ atm_thickness = 100e3  # How deep in the atmosphere you should report attenuatio
 # define machineReadable=False
 
 
-
-
-
 asflownURLpattern = "http://www.swift.psu.edu/operations/obsSchedule.php?d=%Y-%m-%d&a=1"
 preplannedURLpattern = "http://www.swift.psu.edu/operations/obsSchedule.php?d=%Y-%m-%d&a=0"
 
@@ -188,7 +187,6 @@ verbose = False  # Verbose controls diagnositc output
 terse = False  # Terse controls the format of ordinary output
 
 
-
 # Old fashioned
 def simbadnames(query):
     """Given a source name, or other SIMBAD query, generates a list of identifier matches
@@ -196,7 +194,7 @@ def simbadnames(query):
     """
     u = urlopen(
         """http://simbad.u-strasbg.fr/simbad/sim-script?submit=submit+script&script=format+object+%%22+%%25IDLIST%%22%%0D%%0Aquery++%s""" % (
-        quote(query),), None, 60)
+            quote(query),), None, 60)
     names = []
     while u:
         l = u.readline().decode()
@@ -230,7 +228,7 @@ def simbadlocation(objectname):
         return (co.ra.degree, co.dec.degree)
     except Exception as e:
         raise RuntimeError(f"{e}")
-    
+
 
 class orbit:
     def __init__(self):
@@ -394,6 +392,93 @@ def batExposure(theta, phi):
     return (area * 1e4 / 2, math.cos(theta))
 
 
+def detid2xy(detids):
+    """
+    Convert detector ids to x,y positions
+
+    This is tricky.  You can understand it, but it isn't worth it.
+
+    :param detids: detector ids (ints 0...32767)
+    :type detids: scalar int or convertible to a numpy array
+    :return: x,y
+    :rtype: x and y are each numpy arrays or scalars the same size as the original detids
+    """
+    scalar = np.isscalar(detids)
+    detids = np.asarray(detids, dtype=np.int16)
+
+    #  'mod' is a 128-detector half-DM
+    block_and_mod, det_in_mod = np.divmod(detids, np.int16(128))
+    block, mod_in_block = np.divmod(block_and_mod, np.int16(16))
+
+    # x in {0..285}, y in {0..172}
+    # origin lower left is block 8, hdm 9, det 0
+    # 16 modules across (each 16 detectors wide) with 15 gaps of 2 -> 286 x values
+    # 16 modules high (each 8 detectors high) with gaps of 3 -> 173 y values
+
+    # Module frame imod, jmod
+    # 127 119 111 103  95  87  79  71  56  48  40  32  24  16  8   0
+    # 126                          70  57                          1
+    # 125                          69  58                          2   ^
+    # 124                          68  59                          3   |
+    # 123                          67  60                          4   jmod
+    # 122                          66  61                          5
+    # 121                          65  62                          6    imod  ->
+    # 120 112 104  96  88  80  72  64  63  55  47  39  31  23  15  7
+    bit6, bit5_0 = np.divmod(det_in_mod, np.int16(64))  # bit7 is left or right half
+    bit6_3, bit2_0 = np.divmod(det_in_mod, np.int16(8))  # bits 6-3 determine the imod, bits 2-0 jmod
+    imod = np.int16(15) - bit6_3
+    jmod = np.where(bit6, bit2_0, np.int16(7) - bit2_0)
+
+    # for block 0-7, half-DMs are arranged
+    # 1    9
+    # 0    8
+    # 3    11     ^
+    # 2    10     |
+    # 5    13     |
+    # 4    12   jblock
+    # 7    15
+    # 6    14          iblock ---->
+
+    bit10, bit9_7 = np.divmod(mod_in_block, np.int16(8))
+    iblock = imod + np.int16(18) * bit10  # 16 detectors + 2-space gap for second column
+    jmodrow = (np.array([6, 7, 4, 5, 2, 3, 0, 1]) * 11).astype(
+        np.int16)  # 8 detectors and 3-space gap for each row of modules
+    jblock = jmod + jmodrow[bit9_7]
+
+    # blocks are arranged:
+    #       0  1  2  3  4  5  6  7
+    #       8  9  10 11 12 13 14 15
+    # and blocks 8-15 are rotated 180 degrees
+    bit15, bit14_11 = np.divmod(block, np.int16(8))
+    #                      8-15        0-7
+    y = np.where(bit15, np.int16(85) - jblock, np.int16(88) + jblock)
+    x = np.where(bit15, np.int16(34) - iblock, iblock) + np.int16(36) * bit14_11
+    if scalar:
+        x = np.int16(x)
+        y = np.int16(y)
+    return x, y
+
+@functools.cache
+def _xy2detidmap():
+    """
+    Produce a detector map filled with detector IDs
+
+    -1 for unpopulated detector locations
+
+    :return: detids[y, x]
+    :rtype: uint16, shape = (173, 286)
+    """
+    detids = np.arange(0,2**15)
+    x,y = detid2xy(detids)
+    result = np.full((y.max()+1, x.max()+1), np.int16(-1))
+    result[y,x] = detids
+    return result
+
+def xy2detid(x, y):
+    dmap = _xy2detidmap()
+    return dmap[y, x]
+
+
 def loadsourcecat():
     """Read in source catalog
     
@@ -407,7 +492,7 @@ def loadsourcecat():
         if os.path.exists(cataloglist[3]):
             if verbose:
                 print("Loading catalogs:\n %s" % "\n ".join(cataloglist[0:3]))
-            sourcecat = sourcelist(cataloglist[0:3]+[fitscatfile], verbose=verbose)  # Exclude newcatalog
+            sourcecat = sourcelist(cataloglist[0:3] + [fitscatalog], verbose=verbose)  # Exclude newcatalog
         else:
             if verbose:
                 print("Using old catalog %s" % (basecatalog,))
@@ -669,7 +754,6 @@ class pointingEntry:
 #			<td>&nbsp;837&nbsp;</td>
 
 
-
 # Old patterns for pointingTable.oldLoad*:
 # use datatime.strftime(asflownpattern)
 # asflownpattern="/Volumes/Data/Swift/swift-trend/%Y_%m/misc/asflown/AFST_%Y%j*.txt.gz"
@@ -752,7 +836,7 @@ class pointingTable:
             print(u)
         try:
             s = BeautifulSoup.BeautifulSoup(urlopen(u, None, timeout=10, context=unsafe_context), "html.parser")
-            table = s.find('table') # , {"class": "ppst"})  # Even the as-flown table has class ppst
+            table = s.find('table')  # , {"class": "ppst"})  # Even the as-flown table has class ppst
             for row in table.findAll('tr'):
                 try:
                     pe = pointingEntry.fromTableRow(row, preplanned)
@@ -764,7 +848,7 @@ class pointingTable:
                     try:
                         # Crude way of checking whether the AFST is complete.  Better would be to check the time
                         if (text[0:9] == 'There may'
-                            or text[0:10] == 'There will'):  # be later observations for this date
+                                or text[0:10] == 'There will'):  # be later observations for this date
                             break  # Do not execute else clause
                     except:
                         pass
@@ -1153,11 +1237,11 @@ def main(argv=None, debug=None):
                     debug.flush()
                 if terse:
                     print("Satellite zenith RA=%.2f, dec=%.2f, lat=%.2f N, lon=%.2f E" % (
-                    sat.a_ra * r2d, sat.a_dec * r2d, sat.sublat * r2d, sat.sublong * r2d))
+                        sat.a_ra * r2d, sat.a_dec * r2d, sat.sublat * r2d, sat.sublong * r2d))
                 else:
                     print("Swift Zenith(RA,dec):         %.2f, %.2f" % (sat.a_ra * r2d, sat.a_dec * r2d))
                     print("Swift Location(lon,lat,alt):  %.2f E, %.2f N, %.0f km" % (
-                    sat.sublong * r2d, sat.sublat * r2d, sat.elevation / 1000))
+                        sat.sublong * r2d, sat.sublat * r2d, sat.elevation / 1000))
             for p in pointings:
                 if not excelvis:
                     if terse:
@@ -1165,9 +1249,10 @@ def main(argv=None, debug=None):
                     else:
                         print("Obs Sequence Number:          %08d%03d" % (p._obs, p._segment), file=pointprint)
                         print("Obs Target Name:              %s%s" % (
-                        p._sourcename, (" (planned)" if p._planned else "")), file=pointprint)
+                            p._sourcename, (" (planned)" if p._planned else "")), file=pointprint)
                         print("Obs Date and Times:           %s - %s" % (
-                        (p._tstart + udelta).strftime("%Y-%m-%d   %H:%M:%S"), (p._tend + udelta).strftime("%H:%M:%S")),
+                            (p._tstart + udelta).strftime("%Y-%m-%d   %H:%M:%S"),
+                            (p._tend + udelta).strftime("%H:%M:%S")),
                               file=pointprint)
                         print("Obs Pointing(ra,dec,roll):    %.3f, %.3f, %.2f" % (p._ra, p._dec, p._roll),
                               file=pointprint)
@@ -1185,7 +1270,7 @@ def main(argv=None, debug=None):
                             relhoriz = ""
                         if terse:
                             print("%s: (theta,phi) = (%.4f, %.4f); exposure = %.0f cm^2%s" % (
-                            s.name, theta, ephem.degrees(phi).znorm, exp * cosangle, relhoriz), file=pointprint)
+                                s.name, theta, ephem.degrees(phi).znorm, exp * cosangle, relhoriz), file=pointprint)
                         elif excelvis:
                             (elevstart, losheightstart, descriptionstart) = lineofsight(
                                 orbits.getSatellite(p._tslewend), s)
@@ -1199,7 +1284,7 @@ def main(argv=None, debug=None):
                                                                       elevend), file=pointprint)
                         else:
                             print("%s_imageloc (boresight_dist, angle): (%.0f, %.0f)" % (
-                            s.name, theta * r2d, ephem.degrees(phi).znorm * r2d), file=pointprint)
+                                s.name, theta * r2d, ephem.degrees(phi).znorm * r2d), file=pointprint)
                             print("%s_exposure (cm^2 cos adjusted): %.0f" % (s.name, exp * cosangle), file=pointprint)
                             if len(relhoriz) > 3:
                                 print("%s_altitude: %.0f (%s)" % (s.name, elev, description), file=pointprint)
