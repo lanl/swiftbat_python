@@ -74,24 +74,7 @@ except AttributeError:
 
 split_translate = maketrans("][, \t;", "      ")
 
-try:
-    from StringIO import StringIO
-except:
-    # In 2.7, io.StringIO causes trouble with Unicode
-    from io import StringIO
-
-try:
-    _str = basestring
-except NameError:
-    _str = str
-
-if 0:
-    swanaldir = "/usr/local/src/swiftanal"
-    if not swanaldir in map(os.path.abspath, sys.path):
-        sys.path.append(swanaldir)
-
-    batstudiesdir = "/Users/palmer/repo/scheme/batstudies"
-    sys.path.append(batstudiesdir)
+from io import StringIO
 
 # Running into certificate problems from 2018-10-23 for
 # https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error
@@ -100,10 +83,7 @@ import ssl
 
 unsafe_context = ssl._create_unverified_context()
 
-try:
-    from urllib2 import urlopen, quote
-except:
-    from urllib.request import urlopen, quote
+from urllib.request import urlopen, quote
 from swiftbat import generaldir
 
 try:
@@ -175,7 +155,7 @@ ydhms = "%Y-%j-%H:%M:%S"
 TLEpattern = ["http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/", ".*", "auxil", "SWIFT_TLE_ARCHIVE.*.gz"]
 
 tlefile = "/tmp/latest_swift_tle.gz"
-tlebackup = "/Users/palmer/.swift/recent_swift_tle.gz"
+tlebackup = os.path.expanduser("~/.swift/recent_swift_tle.gz")
 
 radecnameRE = re.compile(r'''^(?P<rastring>[0-9.]+)_+(?P<decstring>([-+]*[0-9.]+))$''')
 
@@ -875,7 +855,7 @@ class pointingTable:
 def soupCatStrings(soupnode, stripit=False):
     """Traverse the tree starting from soupnode, and return the 
     strings of the leaf nodes concatenated together"""
-    if isinstance(soupnode, _str):
+    if isinstance(soupnode, str):
         s = soupnode
     else:
         s = "".join([soupCatStrings(sn, stripit) for sn in soupnode.contents])
