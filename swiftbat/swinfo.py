@@ -53,7 +53,6 @@ import datetime
 import shutil
 
 import glob
-# import copy
 import gzip
 import traceback
 import getopt
@@ -65,15 +64,6 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import coordinates
 import numpy as np
-
-# python 2/3 adaptors
-try:
-    maketrans = str.maketrans
-except AttributeError:
-    from string import maketrans
-
-split_translate = maketrans("][, \t;", "      ")
-
 from io import StringIO
 
 # Running into certificate problems from 2018-10-23 for
@@ -85,18 +75,13 @@ unsafe_context = ssl._create_unverified_context()
 
 from urllib.request import urlopen, quote
 from swiftbat import generaldir
-
-try:
-    import BeautifulSoup
-except:
-    try:
-        import bs4 as BeautifulSoup
-    except:
-        print("No BeautifulSoup or bs4 in ", sys.path, " in ", sys.executable)
-        raise
+import bs4 as BeautifulSoup
 import ephem
 
 import sqlite3  # Good sqlite3 tutorial at http://www.w3schools.com/sql/default.asp
+split_translate = str.maketrans("][, \t;", "      ")
+
+
 
 # Pointings database (as opposed to an observations database) has two tables, 'pointings' and 'days'
 # pdbfile = os.path.join(swiftcache.theCache.params['LOCAL'][0],"pointings.db")
@@ -132,7 +117,7 @@ sqlite3.register_converter("boolean", convert_boolean)
 basecatalog = os.path.join(execdir, "catalog")
 fitscatalog = os.path.join(execdir, "recent_bcttb.fits.gz")
 # FIXME should be handled by dotswift
-catalogdir = "/Volumes/Data/Swift/analysis/sourcelist"
+catalogdir = "/opt/data/Swift/analysis/sourcelist"
 newcatalogfile = os.path.join(catalogdir, "newcatalog")
 cataloglist = [os.path.join(catalogdir, "trumpcatalog"),
                os.path.join(catalogdir, "grbcatalog"),
@@ -438,7 +423,7 @@ def detid2xy(detids):
         y = np.int16(y)
     return x, y
 
-@functools.cache
+@functools.lru_cache(maxsize=0)
 def _xy2detidmap():
     """
     Produce a detector map filled with detector IDs
