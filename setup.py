@@ -44,6 +44,7 @@ setup(
     author_email='palmer@lanl.gov',
     description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
     install_requires = ['beautifulsoup4', 'ephem', 'astropy', 'astroquery'],
     classifiers=['Development Status :: 3 - Alpha', 'Intended Audience :: Science/Research', 'Programming Language :: Python',
