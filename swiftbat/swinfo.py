@@ -53,7 +53,6 @@ import datetime
 import shutil
 
 import glob
-# import copy
 import gzip
 import traceback
 import getopt
@@ -66,32 +65,7 @@ from astropy.io import fits
 from astropy import coordinates
 import numpy as np
 
-# python 2/3 adaptors
-try:
-    maketrans = str.maketrans
-except AttributeError:
-    from string import maketrans
-
-split_translate = maketrans("][, \t;", "      ")
-
-try:
-    from StringIO import StringIO
-except:
-    # In 2.7, io.StringIO causes trouble with Unicode
-    from io import StringIO
-
-try:
-    _str = basestring
-except NameError:
-    _str = str
-
-if 0:
-    swanaldir = "/usr/local/src/swiftanal"
-    if not swanaldir in map(os.path.abspath, sys.path):
-        sys.path.append(swanaldir)
-
-    batstudiesdir = "/Users/palmer/repo/scheme/batstudies"
-    sys.path.append(batstudiesdir)
+from io import StringIO
 
 # Running into certificate problems from 2018-10-23 for
 # https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error
@@ -100,23 +74,15 @@ import ssl
 
 unsafe_context = ssl._create_unverified_context()
 
-try:
-    from urllib2 import urlopen, quote
-except:
-    from urllib.request import urlopen, quote
+from urllib.request import urlopen, quote
 from swiftbat import generaldir
-
-try:
-    import BeautifulSoup
-except:
-    try:
-        import bs4 as BeautifulSoup
-    except:
-        print("No BeautifulSoup or bs4 in ", sys.path, " in ", sys.executable)
-        raise
+import bs4 as BeautifulSoup
 import ephem
 
 import sqlite3  # Good sqlite3 tutorial at http://www.w3schools.com/sql/default.asp
+split_translate = str.maketrans("][, \t;", "      ")
+
+
 
 # Pointings database (as opposed to an observations database) has two tables, 'pointings' and 'days'
 # pdbfile = os.path.join(swiftcache.theCache.params['LOCAL'][0],"pointings.db")
@@ -152,7 +118,7 @@ sqlite3.register_converter("boolean", convert_boolean)
 basecatalog = os.path.join(execdir, "catalog")
 fitscatalog = os.path.join(execdir, "recent_bcttb.fits.gz")
 # FIXME should be handled by dotswift
-catalogdir = "/Volumes/Data/Swift/analysis/sourcelist"
+catalogdir = "/opt/data/Swift/analysis/sourcelist"
 newcatalogfile = os.path.join(catalogdir, "newcatalog")
 cataloglist = [os.path.join(catalogdir, "trumpcatalog"),
                os.path.join(catalogdir, "grbcatalog"),
@@ -175,7 +141,7 @@ ydhms = "%Y-%j-%H:%M:%S"
 TLEpattern = ["http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/", ".*", "auxil", "SWIFT_TLE_ARCHIVE.*.gz"]
 
 tlefile = "/tmp/latest_swift_tle.gz"
-tlebackup = "/Users/palmer/.swift/recent_swift_tle.gz"
+tlebackup = os.path.expanduser("~/.swift/recent_swift_tle.gz")
 
 radecnameRE = re.compile(r'''^(?P<rastring>[0-9.]+)_+(?P<decstring>([-+]*[0-9.]+))$''')
 
@@ -458,7 +424,7 @@ def detid2xy(detids):
         y = np.int16(y)
     return x, y
 
-@functools.cache
+@functools.lru_cache(maxsize=0)
 def _xy2detidmap():
     """
     Produce a detector map filled with detector IDs
@@ -875,7 +841,7 @@ class pointingTable:
 def soupCatStrings(soupnode, stripit=False):
     """Traverse the tree starting from soupnode, and return the 
     strings of the leaf nodes concatenated together"""
-    if isinstance(soupnode, _str):
+    if isinstance(soupnode, str):
         s = soupnode
     else:
         s = "".join([soupCatStrings(sn, stripit) for sn in soupnode.contents])

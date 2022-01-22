@@ -57,7 +57,7 @@ class clockErrData:
     clockhostdir = '/caldb/data/swift/mis/bcf/clock/'
     clockfile_regex = 'swclockcor20041120v\d*.fits'
     # FIXME this should be derived from the dotswift params
-    clocklocalsearchpath = ['/Volumes/Data/Swift/swift-trend/clock',
+    clocklocalsearchpath = ['/opt/data/Swift/swift-trend/clock',
                             os.path.expanduser('~/.swift/swiftclock'),
                             '/tmp/swiftclock']
     clockfilepattern = 'swclockcor20041120v*.fits'
@@ -76,8 +76,8 @@ class clockErrData:
             self._c2 = f[1].data.field('C2').copy()
             f.close()
         except:
-            raise RuntimeError("No clock UTCF file")
             self._clockfile = ""
+            raise RuntimeError("No clock UTCF file")
 
     def utcf(self, t, trow=None):  # Returns value in seconds to be added to MET to give correct UTCF
         if not self._clockfile:
@@ -162,18 +162,26 @@ class clockErrData:
         return clockfile
 
 
-def utcf(t, printCaveats=True, returnCaveats=False):
+def utcf(met, printCaveats=True, returnCaveats=False):
+    """
+    Correction factor to add to MET to get UTC
+    :param met:
+    :param printCaveats:
+    :param returnCaveats:
+    :return:
+    """
     global theClockData
     if theClockData == None:
         theClockData = clockErrData()
     try:
-        uc = [theClockData.utcf(t_) for t_ in t]
+        uc = [theClockData.utcf(t_) for t_ in met]
         # http://muffinresearch.co.uk/archives/2007/10/16/python-transposing-lists-with-map-and-zip/
+        # Not valid after Python 2.7
         u, c = map(None, *uc)
         if printCaveats and any(c):
             print("\n".join(["**** " + c_ for c_ in c if c_]))
     except TypeError:
-        u, c = theClockData.utcf(t)
+        u, c = theClockData.utcf(met)
         if printCaveats and c:
             print("**** " + c)
     if returnCaveats:

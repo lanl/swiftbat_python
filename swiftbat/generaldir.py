@@ -15,11 +15,7 @@ David Palmer   palmer@lanl.gov
 
 import sys
 import os
-
-try:
-    from urllib2 import urlopen
-except:
-    from urllib.request import urlopen
+from urllib.request import urlopen
 import re
 import shutil
 import stat

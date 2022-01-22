@@ -27,16 +27,27 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 
 """
 
+try:
+    with open("README.md", 'r') as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = ''
+
 setup(
-    name='swiftbat_python',
-    version='0.1a12',
+    name='swiftbat',
+    version='0.1',
     packages=['swiftbat'],
     package_data={'':['catalog', 'recent_bcttb.fits.gz']},
-    url='',
+    url='https://github.com/lanl/swiftbat_python/',
     license='BSD-3-Clause',
     author='David M. Palmer',
     author_email='palmer@lanl.gov',
     description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
+    long_description=long_description,
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
-    install_requires = ['beautifulsoup4', 'ephem', 'astropy', 'astroquery']
+    install_requires = ['beautifulsoup4', 'ephem', 'astropy', 'astroquery'],
+    classifiers=['Development Status :: 3 - Alpha', 'Intended Audience :: Science/Research', 'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Topic :: Scientific/Engineering :: Astronomy', ],
+    python_requires='>=3.6',
 )
