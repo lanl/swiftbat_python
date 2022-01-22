@@ -29,6 +29,7 @@ from pathlib import Path
 from swiftbat import simbadnames, simbadlocation
 import re
 
+
 class BATCatalog():
     filebasename = 'recent_bcttb.fits.gz'
     thisdir = Path(__file__).parent
@@ -80,8 +81,8 @@ class BATCatalog():
                     return simbadmatches
             except:
                 pass
-            raise e     # The KeyError, even though the last failure was by simbadmatch
-        
+            raise e  # The KeyError, even though the last failure was by simbadmatch
+
         # IMPROVEME: Go to SIMBAD and resolve the source, get its position, and find BAT source near that
 
     def simbadmatch(self, item, tolerance=0.2):
@@ -91,16 +92,16 @@ class BATCatalog():
         :param tolerance: 
         :return: 
         """
-        ra,dec = simbadlocation(item)
+        ra, dec = simbadlocation(item)
         return self.positionmatch(ra, dec, tolerance)
-        
+
     def positionmatch(self, radeg, decdeg, tolerance=0.2):
         rascale = np.cos(np.deg2rad(decdeg))
         tol2 = tolerance ** 2
-        raoff = (((self.cattable['RA_OBJ'] - radeg) + 180) % 360 - 180) # Handle the 360-0 wrap
+        raoff = (((self.cattable['RA_OBJ'] - radeg) + 180) % 360 - 180)  # Handle the 360-0 wrap
         dist2 = (raoff * rascale) ** 2 + (self.cattable['DEC_OBJ'] - decdeg) ** 2
         return self.cattable[dist2 < tol2]
-    
+
     def allnames(self):
         return set([row['NAME'] for row in self.cattable if row['NAME']])
 
@@ -111,8 +112,8 @@ class BATCatalog():
         for row in self.cattable:
             if not row['CATNUM']:
                 continue
-            self.bycatnum.setdefault(row['CATNUM'],[]).append(row)
-            self.byname.setdefault(row['NAME'],[]).append(row)
+            self.bycatnum.setdefault(row['CATNUM'], []).append(row)
+            self.byname.setdefault(row['NAME'], []).append(row)
             self.bysimplename.setdefault(self.simplename(row['NAME']), []).append(row)
 
     @lru_cache(maxsize=0)
