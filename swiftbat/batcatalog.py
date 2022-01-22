@@ -22,7 +22,6 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 """
 
 from functools import lru_cache
-
 from astropy.io import fits
 import numpy as np
 from pathlib import Path

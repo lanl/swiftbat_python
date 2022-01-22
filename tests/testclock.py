@@ -13,16 +13,15 @@ class ClockTestCase(unittest.TestCase):
         testvector = [(swiftbat.string2met("2018-08-29 23:31:01", correct=False), -21.50867)]
         clockerrdata = clockErrData()
         clockerrfile = Path(clockerrdata._clockfile)
-        self.assert_(clockerrfile.exists())
-        for t,utcf_expected in testvector:
+        self.assertTrue(clockerrfile.exists())
+        for t, utcf_expected in testvector:
             utcf_returned = swiftbat.utcf(t)
             self.assertAlmostEqual(utcf_returned, utcf_expected, places=3)
 
-        now = datetime.datetime.utcnow()
         with tempfile.TemporaryDirectory() as tempclockdir:
             clockerrdata.updateclockfiles(tempclockdir, ifolderthan_days=0)
             file = next(Path(tempclockdir).glob('swclock*.fits'))
-            self.assert_(file.exists())
+            self.assertTrue(file.exists())
 
 
 if __name__ == '__main__':

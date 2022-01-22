@@ -118,7 +118,7 @@ sqlite3.register_converter("boolean", convert_boolean)
 basecatalog = os.path.join(execdir, "catalog")
 fitscatalog = os.path.join(execdir, "recent_bcttb.fits.gz")
 # FIXME should be handled by dotswift
-catalogdir = "/Volumes/Data/Swift/analysis/sourcelist"
+catalogdir = "/opt/data/Swift/analysis/sourcelist"
 newcatalogfile = os.path.join(catalogdir, "newcatalog")
 cataloglist = [os.path.join(catalogdir, "trumpcatalog"),
                os.path.join(catalogdir, "grbcatalog"),
