@@ -527,8 +527,11 @@ class source:
             but it is not useful for thetangle > 90 degrees
         """
         thetangle = self.distance(ra, dec)
-        # roll is 'roll left' (CCW as seen from behind looking out along boresight), posang is CCW, phi is CCW from +Y so (posang - roll - 90deg) gives phi
+        # roll is 'roll left' (CCW as seen from behind looking out along boresight),
+        # posang is CCW, phi is CCW from +Y so (posang - roll - 90deg) gives phi
         phi = self.posang_from(ra, dec) - ephem.degrees(roll * ephem.degree) - ephem.halfpi
+        # znorm, in range (-pi, pi) is how it is reported on-board
+        phi = (phi + ephem.pi) % ephem.twopi - ephem.pi
         # print("posang = %f E of N, roll = %f" % (self.posang_from(ra,dec),0+ephem.degrees( roll * ephem.degree)))
         return (thetangle, phi)
 
