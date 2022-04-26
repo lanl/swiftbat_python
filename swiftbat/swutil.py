@@ -199,7 +199,7 @@ def string2datetime(s, nocomplaint=False, correct=False):
         else:
             print(
                 "Invalid time '%s'.  Valid formats: 2004-12-05T19:43:27, 2004:329:12:15:07, 123456789.01234, JD2454192.8273, MJD 14192.5273, 140308_13764" % (
-                    s))
+                    s), file=sys.stderr)
             raise
 
 

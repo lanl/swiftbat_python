@@ -339,7 +339,7 @@ def main():
     if len(sys.argv) <= 1:
         # dive("http://swift.gsfc.nasa.gov/SDC/data/local/data1/data/", 2)
         # dive("file:///tmp", 3)
-        # dive("ftp://anonymous:palmer%40lanl.gov@legacy.gsfc.nasa.gov/swift/data/", 2)
+        # dive("ftp://anonymous:palmer%40lanl.gov@heasarc.gsfc.nasa.gov/swift/data/", 2)
         # print(swiftCache()
         pass
     else:

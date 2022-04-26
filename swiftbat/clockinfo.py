@@ -52,8 +52,8 @@ caveat_time = 86400 * 90  # print a caveat if UTCF is more than 90 days stale
 class clockErrData:
     # URL is never used on David Palmer's machine (updates handled by ...swift-trend/getit)
     # clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
-    clockurl = "ftps://legacy.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
-    clockhost = 'legacy.gsfc.nasa.gov'
+    clockurl = "ftps://heasarc.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
+    clockhost = 'heasarc.gsfc.nasa.gov'
     clockhostdir = '/caldb/data/swift/mis/bcf/clock/'
     clockfile_regex = 'swclockcor20041120v\d*.fits'
     # FIXME this should be derived from the dotswift params
@@ -135,7 +135,7 @@ class clockErrData:
                     ftps.retrbinary(f'RETR {ftplatest}', newfile.write)
             open(testfile,'w').write(' ') # touch
         except Exception as e:
-            print(e)
+            print(e, file=sys.stdout)
 
 
     def clockfile(self):

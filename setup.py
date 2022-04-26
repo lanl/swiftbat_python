@@ -35,7 +35,7 @@ except FileNotFoundError:
 
 setup(
     name='swiftbat',
-    version='0.1a15',
+    version='0.1a16',
     packages=['swiftbat'],
     package_data={'':['catalog', 'recent_bcttb.fits.gz']},
     url='https://github.com/lanl/swiftbat_python/',
