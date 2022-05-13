@@ -2,6 +2,8 @@
 
 from __future__ import print_function, division, absolute_import
 
+from numpy import isin
+
 """
 swutil
 Utilities for dealing with Swift Data
@@ -91,6 +93,29 @@ mytruncjdepoch = mjdepoch - datetime.timedelta(days=0.5)
 fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
+def any2datetime(arg, correct=True):
+    """Change the argument into a (naive) datetime
+    
+    Understands:
+        strings as accepted by string2datetime
+        astropy, skyfield, or pyephem dates
+        int/floats representing a Swift MET (uses the 'correct' argument for utcf)
+            Don't try giving it MJD or JD: it will misinterpret.
+        iterables of any of these, returning a list of datetimes     
+    """
+    if isinstance(arg, str):
+        return string2datetime(arg, correct=correct)
+    for convname in ('to_datetime', 'utc_datetime', 'datetime'):
+                # astropy, skyfield, pyephem
+        if hasattr(arg, convname):
+            return getattr(arg, convname)(arg)
+    if isinstance(arg, (float, int)):
+        return met2datetime(arg, correct=correct)
+    try:
+        return [any2datetime(arg_, correct=True) for arg_ in arg]
+    except TypeError:   # Not iterable (assuming thrown by 'for')
+        pass
+    
 
 def string2datetime(s, nocomplaint=False, correct=False):
     """
@@ -211,6 +236,7 @@ def string2met(s, nocomplaint=False, correct=False):
         return datetime2met(d, correct=correct)
 
 
+# FIXME replace with .total_seconds() throughout
 def timedelta2seconds(td):
     return td.days * 86400.0 + (td.seconds * 1.0 + td.microseconds * 1e-6)
 
@@ -220,6 +246,8 @@ def met2datetime(met, correct=False):
         met += utcf(met, False, False)
     return swiftepoch + datetime.timedelta(seconds=met)
 
+def datetime2mjd(dt):
+    return (dt - mjdepoch).total_seconds()/86400
 
 def datetime2met(dt, correct=False):
     met = timedelta2seconds(dt - swiftepoch)
