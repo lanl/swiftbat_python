@@ -43,7 +43,7 @@ def subTemplate(origstring, keydict,
     return s
 
 
-class generalDir:
+class GeneralDir:
     _rewildsplitter = re.compile(r'''(?P<unwild>(/*[^$/]+[/]+)*)(?P<firstwild>[^/]*)/*(?P<restwild>.*)''')
 
     def __init__(self, url):
@@ -97,9 +97,11 @@ class generalDir:
         """
         # print("subpath = ",subpath)
         if subpath == None: subpath = ''
+        if matchdict is None: matchdict = {}
+        if regexdict is None: regexdict = {}
         (unwild, firstwild, restwild) = self._splitAndSub(wildpath, matchdict, regexdict)
         # print("join (%s,%s)" % (subpath,unwild))
-        subpath = os.path.join(subpath, unwild)  # Add the non-wild stuff to the subpath
+        subpath = os.path.join(subpath, unwild).rstrip('/')  # Add the non-wild stuff to the subpath
         # print("->",subpath)
         if not self.exists(subpath):  # if the unwild stuff doesn't exist then this is a dead end
             # print("Deadend : %s / %s" % (self.url,subpath))
@@ -144,8 +146,8 @@ class generalDir:
     def _splitAndSub(self, wildpath, matchdict, regexdict):
         """ returns a (topUNwildpath, firstwildness, restofwildpath) tuple with matches and regexes subbed in """
         wildpath = subTemplate(wildpath, matchdict)  # Do all the matching you can
-        if -1 == wildpath.find("$"):
-            return (wildpath, '', '')
+        # if -1 == wildpath.find("$"):
+        #     return (wildpath, '', '')
         m = self._rewildsplitter.match(wildpath)
         # print(wildpath+"-->",m.groupdict())
         if not m or (not m.groupdict()['firstwild'] and m.groupdict()['restwild']):
@@ -156,7 +158,7 @@ class generalDir:
         return (m.groupdict()['unwild'], m.groupdict()['firstwild'], m.groupdict()['restwild'])
 
 
-class httpDir(generalDir):
+class HTTPDir(GeneralDir):
     """ HTTP specialization for the directory generalization
     Works on apache servers with autoindex generation
     A directory is read by reading from its URL with a trailing /.  (Reading without
@@ -177,12 +179,12 @@ class httpDir(generalDir):
     filenofancymatch = re.compile(r'''HREF="(?P<foundname>[^\?"/]+)">''', re.MULTILINE | re.IGNORECASE)
 
     # FIXME allow https
-    validurlmatch = re.compile("http://", re.IGNORECASE)
+    validurlmatch = re.compile("http(s{0,1})://", re.IGNORECASE)
 
     def __init__(self, url):
         if not self.validurlmatch.search(url):
             raise RuntimeError("Not an http url: %s" % url)
-        generalDir.__init__(self, url)
+        GeneralDir.__init__(self, url)
         self.filecache = {}
         self.dircache = {}
         # print("HTTP works on %s", url)
@@ -211,7 +213,7 @@ class httpDir(generalDir):
         return os.path.join(self.url, urlrelativepathname)
 
 
-class ftpDir(generalDir):
+class FTPDir(GeneralDir):
     _filelinematch = re.compile(r'''(?<=^-[r-][w-].[r-][w-].r..\s).+$''', re.MULTILINE | re.IGNORECASE)
     _dirlinematch = re.compile(r'''(?<=^d[r-][w-].[r-][w-].r..\s).+$''', re.MULTILINE | re.IGNORECASE)
     _namematch = re.compile("\S+\s*$")  # last string of nonwhite characters before eol
@@ -219,7 +221,7 @@ class ftpDir(generalDir):
     def __init__(self, url):
         if not re.compile("ftp://", re.IGNORECASE).search(url):
             raise RuntimeError("Not a valid ftp url: %s" % url)
-        generalDir.__init__(self, url)
+        GeneralDir.__init__(self, url)
 
     def files(self, subdir=""):
         lines = self.getMatches(subdir + '/', self._filelinematch)
@@ -230,7 +232,7 @@ class ftpDir(generalDir):
         return [self._namematch.findall(l.strip())[0] for l in lines]
 
 
-class localDir(generalDir):
+class LocalDir(GeneralDir):
     def __init__(self, url):
         # print("Trying %s as local file" % url)
         nofileurl = re.compile(r'''(?<=FILE://)([^>]*)''', re.IGNORECASE).findall(url)
@@ -238,7 +240,7 @@ class localDir(generalDir):
             self.dirname = os.path.realpath(nofileurl[0])
         else:
             self.dirname = os.path.realpath(url)
-        generalDir.__init__(self, "FILE://" + self.dirname)
+        GeneralDir.__init__(self, "FILE://" + self.dirname)
 
     def dirs(self, subdir=""):
         d = os.path.join(self.dirname, subdir)
@@ -293,7 +295,7 @@ class localDir(generalDir):
 
 
 def getDir(url):
-    for trialclass in (httpDir, ftpDir, localDir):
+    for trialclass in (HTTPDir, FTPDir, LocalDir):
         # print("trying ", trialclass)
         try:
             return trialclass(url)

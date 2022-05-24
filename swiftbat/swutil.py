@@ -249,6 +249,9 @@ def met2datetime(met, correct=False):
 def datetime2mjd(dt):
     return (dt - mjdepoch).total_seconds()/86400
 
+def mjd2datetime(mjd):
+    return mjdepoch + datetime.timedelta(days=mjd)
+    
 def datetime2met(dt, correct=False):
     met = timedelta2seconds(dt - swiftepoch)
     if correct:

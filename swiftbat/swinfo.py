@@ -277,7 +277,7 @@ class orbit:
             try:
                 if verbose:
                     print("Trying to get TLE from %s" % (url_month,))
-                httpdir = generaldir.httpDir(url_month)
+                httpdir = generaldir.HTTPDir(url_month)
                 obsmonth = httpdir.dirs()
                 obsmonth.reverse()
                 for obs in obsmonth:
