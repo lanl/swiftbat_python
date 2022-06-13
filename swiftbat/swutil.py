@@ -100,7 +100,7 @@ def any2datetime(arg, correct=True, mjd=False, jd=False):
         astropy, skyfield, or pyephem dates
         int/floats representing a Swift MET (uses the 'correct' argument for utcf)
             unless mjd or jd set (for Mod. Julian Day and Julian Day, respectively)
-        iterables of any of these, returning a list of datetimes     
+        iterables of any of these, returning a list of datetimes
     """
     if isinstance(arg, str):
         return string2datetime(arg, correct=correct)
@@ -119,7 +119,7 @@ def any2datetime(arg, correct=True, mjd=False, jd=False):
         return [any2datetime(arg_, correct=True, mjd=mjd, jd=jd) for arg_ in arg]
     except TypeError:   # Not iterable (assuming thrown by 'for')
         pass
-    
+
 
 def string2datetime(s, nocomplaint=False, correct=False):
     """
