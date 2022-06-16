@@ -95,7 +95,6 @@ fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
 def any2datetime(arg, correct=True, mjd=False, jd=False):
-at heasarc)
     """Change the argument into a (naive) datetime
     
     Understands:
