@@ -87,9 +87,38 @@ swiftlaunchtime = datetime.datetime(year=2004, month=11, day=20, hour=17, minute
 mjdepoch = datetime.datetime(year=1858, month=11, day=17, hour=0, minute=0, second=0)
 # mytruncjd is jd with the 24 stripped off the head, but without the 0.5 day adjustment
 mytruncjdepoch = mjdepoch - datetime.timedelta(days=0.5)
+_jd_mjd_diff = 2400000.5
 
 fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
+
+def any2datetime(arg, correct=True, mjd=False, jd=False):
+    """Change the argument into a (naive) datetime
+    
+    Understands:
+        strings as accepted by string2datetime
+        astropy, skyfield, or pyephem dates
+        int/floats representing a Swift MET (uses the 'correct' argument for utcf)
+            unless mjd or jd set (for Mod. Julian Day and Julian Day, respectively)
+        iterables of any of these, returning a list of datetimes
+    """
+    if isinstance(arg, str):
+        return string2datetime(arg, correct=correct)
+    for convname in ('to_datetime', 'utc_datetime', 'datetime'):
+                # astropy, skyfield, pyephem
+        if hasattr(arg, convname):
+            return getattr(arg, convname)(arg)
+    if isinstance(arg, (float, int)):
+        if mjd:
+            return mjd2datetime(arg)
+        elif jd:
+            return mjd2datetime(arg - _jd_mjd_diff)
+        else:
+            return met2datetime(arg, correct=correct)
+    try:
+        return [any2datetime(arg_, correct=True, mjd=mjd, jd=jd) for arg_ in arg]
+    except TypeError:   # Not iterable (assuming thrown by 'for')
+        pass
 
 
 def string2datetime(s, nocomplaint=False, correct=False):
@@ -184,7 +213,7 @@ def string2datetime(s, nocomplaint=False, correct=False):
             d = mjdepoch + datetime.timedelta(days=float(m.groupdict()['mjd']))
             return d
         m = rejdtime.match(s)
-        if m:  # JD2454192.8273
+        if m:  # JD2454192.8273  Note that the 'JD24' is found by the regex, leaving the truncated JD
             d = mytruncjdepoch + datetime.timedelta(days=float(m.groupdict()['mytruncjd']))
             return d
         # None of the patterns match, try treating it as a straight number of seconds
@@ -198,7 +227,7 @@ def string2datetime(s, nocomplaint=False, correct=False):
             return None
         else:
             print(
-                "Invalid time '%s'.  Valid formats: 2004-12-05T19:43:27, 2004:329:12:15:07, 123456789.01234, JD2454192.8273, MJD 14192.5273, 140308_13764" % (
+                "Invalid time '%s'.  Valid formats: 2004-12-05T19:43:27, 2004:329:12:15:07, 123456789.01234, JD2454192.8273, MJD14192.5273, 140308_13764" % (
                     s), file=sys.stderr)
             raise
 
@@ -211,6 +240,7 @@ def string2met(s, nocomplaint=False, correct=False):
         return datetime2met(d, correct=correct)
 
 
+# FIXME replace with .total_seconds() throughout
 def timedelta2seconds(td):
     return td.days * 86400.0 + (td.seconds * 1.0 + td.microseconds * 1e-6)
 
@@ -220,7 +250,12 @@ def met2datetime(met, correct=False):
         met += utcf(met, False, False)
     return swiftepoch + datetime.timedelta(seconds=met)
 
+def datetime2mjd(dt):
+    return (dt - mjdepoch).total_seconds()/86400
 
+def mjd2datetime(mjd):
+    return mjdepoch + datetime.timedelta(days=mjd)
+    
 def datetime2met(dt, correct=False):
     met = timedelta2seconds(dt - swiftepoch)
     if correct:
