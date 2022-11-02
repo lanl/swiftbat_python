@@ -416,8 +416,8 @@ def detid2xy(detids):
     # and blocks 8-15 are rotated 180 degrees
     bit15, bit14_11 = np.divmod(block, np.int16(8))
     #                      8-15        0-7
-    y = np.where(bit15, np.int16(85) - jblock, np.int16(88) + jblock)
-    x = np.where(bit15, np.int16(34) - iblock, iblock) + np.int16(36) * bit14_11
+    y = np.where(bit15, np.int16(85) - jblock - 1, np.int16(88) + jblock)
+    x = np.where(bit15, np.int16(34) - iblock - 1, iblock) + np.int16(36) * bit14_11
     if scalar:
         x = np.int16(x)
         y = np.int16(y)
