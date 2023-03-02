@@ -6,6 +6,7 @@ import datetime
 import re
 from pathlib import Path
 import ftplib
+import sys
 
 """
 From the FITS file:
@@ -124,7 +125,7 @@ class clockErrData:
         #     % (clockdir, self.clockurl) )
         try:
             ftps = ftplib.FTP_TLS(self.clockhost)
-            ftps.login()    # anonymous
+            ftps.login(timeout=5)    # anonymous
             ftps.prot_p()   # for ftps
             ftps.cwd(self.clockhostdir)
             clockreg = re.compile(self.clockfile_regex)
