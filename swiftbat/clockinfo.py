@@ -6,7 +6,12 @@ import glob
 import datetime
 import re
 from pathlib import Path
+<<<<<<< HEAD
 from .generaldir import httpDir
+=======
+import ftplib
+import sys
+>>>>>>> d363e42 (Added timeout for the FTPS from the server that is supposed to have hte clock files)
 
 """
 From the FITS file:
