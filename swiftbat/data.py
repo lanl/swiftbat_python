@@ -7,37 +7,10 @@ import astropy as ap
 import datetime
 from swiftbat.swutil import any2datetime, datetime2mjd
 # import requests
-# import paramiko
 from functools import lru_cache
 from pathlib import Path
 # import urllib
 from swiftbat.generaldir import HTTPDir
-
-
-# swiftdataurl = 'sftp://heasarc.gsfc.nasa.gov/FTP/swift/data'
-# @lru_cache
-# def _sshclient_heasarc(url):
-#     ssh = paramiko.SSHClient()
-#     try:
-#         ssh.load_host_keys(str(Path('~/.ssh/known_hosts').expanduser()))
-#     except:
-#         pass    # optional
-#     parsedurl = urllib.parse.urlparse(str(url).strip('/'))
-#     ssh.connect(parsedurl.hostname,
-#                 password=parsedurl.password,
-#                 username=parsedurl.username)
-#     return ssh, parsedurl.path
-
-# @lru_cache
-# def _sftp_heasarc_swiftdata(url=swiftdataurl, subdir=None):
-#     ssh, path = _sshclient_heasarc(url)   # Cached
-#     sftp = ssh.open_sftp(url)
-#     subdir = "/".join(([path] if path else [])
-#                    + ([subdir] if subdir else [])).strip("/")
-#     if subdir:
-#         sftp.chdir(subdir)
-#     sftp.chdir = None   # Prevent chdir from being further applied to this cached object
-#     return sftp
 
 @lru_cache
 def heasarc_tdrss_dir():

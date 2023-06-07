@@ -46,7 +46,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
-    install_requires = ['beautifulsoup4', 'pyephem', 'astropy', 'astroquery', 'numpy', 'requests', 'paramiko'],
+    install_requires = ['beautifulsoup4', 'pyephem', 'astropy', 'astroquery', 'numpy', 'requests'],
     classifiers=['Development Status :: 3 - Alpha', 'Intended Audience :: Science/Research', 'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Astronomy', ],
