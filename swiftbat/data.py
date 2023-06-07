@@ -63,7 +63,7 @@ def _heasarc_TTE_location(trignum:int, time:datetime.datetime, matchstring="bevs
         pass
     age = datetime.datetime.utcnow() - time
     
-        
+     
 
 def heasarcquery(cache=True, **queryargs):
     heasarc = Heasarc()
