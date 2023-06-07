@@ -23,3 +23,4 @@ from .clockinfo import utcf
 from .swutil import *
 from .swinfo import *
 from .batcatalog import BATCatalog
+from . import generaldir

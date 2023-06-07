@@ -18,6 +18,8 @@ class ClockTestCase(unittest.TestCase):
             utcf_returned = swiftbat.utcf(t)
             self.assertAlmostEqual(utcf_returned, utcf_expected, places=3)
 
+    def test_clock_download(self):
+        clockerrdata = clockErrData()
         with tempfile.TemporaryDirectory() as tempclockdir:
             clockerrdata.updateclockfiles(tempclockdir, ifolderthan_days=0)
             file = next(Path(tempclockdir).glob('swclock*.fits'))

@@ -52,13 +52,16 @@ class generalDir:
         self.lastreadout = None
 
     def getMatches(self, subpath, reg):
-        return re.compile(reg).findall(self.get(subpath))
+        return re.compile(reg).findall(self.gettext(subpath))
 
-    def get(self, subpath):
+    def gettext(self, subpath):
+        return self.getdata(subpath).decode('utf8')
+
+    def getdata(self, subpath):
         if self.lastsubpath != subpath or self.lastreadout == None:
             # Cache value so that when we request both files and dirs, only one net trans. made
             self.lastsubpath = subpath
-            self.lastreadout = self.openSub(subpath).read().decode('utf-8')
+            self.lastreadout = self.openSub(subpath).read()
         return self.lastreadout
 
     def exists(self, subpath=''):
@@ -83,7 +86,7 @@ class generalDir:
     def makeDirectoryForFile(self, fname):
         try:
             os.makedirs(os.path.dirname(fname))
-        except:
+        except FileExistsError:
             pass  # catch exception thrown when dir already present
 
     def copyToFile(self, subpath, fname):
@@ -176,8 +179,7 @@ class httpDir(generalDir):
     # And some servers do not evevn understand the /?F=0 non-fancy readout
     filenofancymatch = re.compile(r'''HREF="(?P<foundname>[^\?"/]+)">''', re.MULTILINE | re.IGNORECASE)
 
-    # FIXME allow https
-    validurlmatch = re.compile("http://", re.IGNORECASE)
+    validurlmatch = re.compile("https?://", re.IGNORECASE)
 
     def __init__(self, url):
         if not self.validurlmatch.search(url):
@@ -322,9 +324,11 @@ def main():
     regexdict = {'SEQNUM': '(?P<SEQNUM>[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9])',
                  'OBSERVATORY': '(?P<OBSERVATORY>sw)', 'VERSION': '(?P<VERSION>[0-9][0-9][0-9])',
                  'TYPE': '(?P<TYPE>\\W+)', 'CODINGSUFFIXES': '(?P<CODINGSUFFIXES>(.gz|.pgp)*)'}
-    for url in ('http://heasarc.gsfc.nasa.gov/FTP/swift/data/',
-                'http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/2005_04',
-                'http://swift.gsfc.nasa.gov/SDC/data/local/data1/data'):
+    for url in ('https://heasarc.gsfc.nasa.gov/FTP/swift/data/',
+                'https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/2005_04',
+                # 'http://swift.gsfc.nasa.gov/SDC/data/local/data1/data', # Previous location of quicklook
+                # 'https://swift.gsfc.nasa.gov/data/swift/'  # No longer works (gives a page instead of a dir listing)
+                ):
         print(url)
         archive = getDir(url)
         print("----------------")
