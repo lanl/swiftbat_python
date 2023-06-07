@@ -181,7 +181,12 @@ class HTTPDir(GeneralDir):
     # And some servers do not evevn understand the /?F=0 non-fancy readout
     filenofancymatch = re.compile(r'''HREF="(?P<foundname>[^\?"/]+)">''', re.MULTILINE | re.IGNORECASE)
 
+<<<<<<< HEAD
     validurlmatch = re.compile("https?://", re.IGNORECASE)
+=======
+    # FIXME allow https
+    validurlmatch = re.compile("http(s{0,1})://", re.IGNORECASE)
+>>>>>>> 83e89d1 (Working on getting data from heasarc)
 
     def __init__(self, url):
         if not self.validurlmatch.search(url):

@@ -63,7 +63,26 @@ def _heasarc_TTE_location(trignum:int, time:datetime.datetime, matchstring="bevs
         pass
     age = datetime.datetime.utcnow() - time
     
+<<<<<<< HEAD
         
+=======
+    
+    
+    
+
+
+
+
+
+# , triggerrecord=None, **queryargs):
+#     trignums = []   # Trigger number list
+#     times = []      # approximate datetime list
+#     if triggerrecord is None:
+        
+#     if isinstance(triggerrecord, ap.table.Row):
+#         triggerrecord = [triggerrecord] # Make it iterable
+    
+>>>>>>> 83e89d1 (Working on getting data from heasarc)
 
 def heasarcquery(cache=True, **queryargs):
     heasarc = Heasarc()
