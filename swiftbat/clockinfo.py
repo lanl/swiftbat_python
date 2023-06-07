@@ -1,11 +1,12 @@
 from __future__ import division, print_function
 
 import os
+import sys
 import glob
 import datetime
 import re
 from pathlib import Path
-import ftplib
+from .generaldir import httpDir
 
 """
 From the FITS file:
@@ -50,17 +51,15 @@ caveat_time = 86400 * 90  # print a caveat if UTCF is more than 90 days stale
 
 
 class clockErrData:
-    # URL is never used on David Palmer's machine (updates handled by ...swift-trend/getit)
-    # clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
-    clockurl = "ftps://heasarc.gsfc.nasa.gov/caldb/data/swift/mis/bcf/clock/"
+    clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
     clockhost = 'heasarc.gsfc.nasa.gov'
     clockhostdir = '/caldb/data/swift/mis/bcf/clock/'
     clockfile_regex = 'swclockcor20041120v\d*.fits'
+    clockfilepattern = 'swclockcor20041120v*.fits'
     # FIXME this should be derived from the dotswift params
     clocklocalsearchpath = ['/opt/data/Swift/swift-trend/clock',
                             os.path.expanduser('~/.swift/swiftclock'),
                             '/tmp/swiftclock']
-    clockfilepattern = 'swclockcor20041120v*.fits'
 
     def __init__(self):
         try:
@@ -118,21 +117,11 @@ class clockErrData:
                 return
         except:
             pass
-        # Requires wget.  If this is a problem, use ftplib.FTP
-        # os.system(
-        #     "wget -q --directory-prefix=%s --no-host --no-clobber --cut-dirs=6 -r %s"
-        #     % (clockdir, self.clockurl) )
         try:
-            ftps = ftplib.FTP_TLS(self.clockhost)
-            ftps.login()    # anonymous
-            ftps.prot_p()   # for ftps
-            ftps.cwd(self.clockhostdir)
-            clockreg = re.compile(self.clockfile_regex)
-            ftplatest = sorted([f for f in ftps.nlst() if clockreg.match(f)])[-1]
-            locallatest = Path(clockdir).joinpath(ftplatest)
-            if not locallatest.exists():
-                with open(locallatest, "wb") as newfile:
-                    ftps.retrbinary(f'RETR {ftplatest}', newfile.write)
+            clockremotedir = httpDir(self.clockurl)
+            clockremote = sorted(clockremotedir.getMatches("", self.clockfile_regex))[-1]
+            locallatest = Path(clockdir).joinpath(Path(clockremote).name)
+            clockremotedir.copyToFile(clockremote, locallatest)
             open(testfile,'w').write(' ') # touch
         except Exception as e:
             print(e, file=sys.stdout)
@@ -175,9 +164,7 @@ def utcf(met, printCaveats=True, returnCaveats=False):
         theClockData = clockErrData()
     try:
         uc = [theClockData.utcf(t_) for t_ in met]
-        # http://muffinresearch.co.uk/archives/2007/10/16/python-transposing-lists-with-map-and-zip/
-        # Not valid after Python 2.7
-        u, c = map(None, *uc)
+        u, c = zip(*uc)
         if printCaveats and any(c):
             print("\n".join(["**** " + c_ for c_ in c if c_]))
     except TypeError:
