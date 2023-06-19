@@ -6,7 +6,7 @@ import glob
 import datetime
 import re
 from pathlib import Path
-from .generaldir import httpDir
+from .generaldir import HTTPDir
 
 """
 From the FITS file:
@@ -118,7 +118,7 @@ class clockErrData:
         except:
             pass
         try:
-            clockremotedir = httpDir(self.clockurl)
+            clockremotedir = HTTPDir(self.clockurl)
             clockremote = sorted(clockremotedir.getMatches("", self.clockfile_regex))[-1]
             locallatest = Path(clockdir).joinpath(Path(clockremote).name)
             clockremotedir.copyToFile(clockremote, locallatest)
