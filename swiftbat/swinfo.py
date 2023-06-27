@@ -424,7 +424,7 @@ def detid2xy(detids):
     return x, y
 
 @functools.lru_cache(maxsize=0)
-def _xy2detidmap():
+def xy2detidmap():
     """
     Produce a detector map filled with detector IDs
 
@@ -440,7 +440,7 @@ def _xy2detidmap():
     return result
 
 def xy2detid(x, y):
-    dmap = _xy2detidmap()
+    dmap = xy2detidmap()
     return dmap[y, x]
 
 
