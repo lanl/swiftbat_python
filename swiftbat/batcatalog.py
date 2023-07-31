@@ -25,12 +25,12 @@ from functools import lru_cache
 from astropy.io import fits
 import numpy as np
 from pathlib import Path
-from swiftbat import simbadnames, simbadlocation
+from swiftbat import simbadlocation
 import re
 
 
-class BATCatalog():
-    filebasename = 'recent_bcttb.fits.gz'
+class BATCatalog:
+    filebasename = "recent_bcttb.fits.gz"
     thisdir = Path(__file__).parent
 
     def __init__(self, catalogfilename=None):
@@ -86,34 +86,36 @@ class BATCatalog():
 
     def simbadmatch(self, item, tolerance=0.2):
         """
-        What rows match the catalogued 
-        :param item: 
-        :param tolerance: 
-        :return: 
+        What rows match the catalogued
+        :param item:
+        :param tolerance:
+        :return:
         """
         ra, dec = simbadlocation(item)
         return self.positionmatch(ra, dec, tolerance)
 
     def positionmatch(self, radeg, decdeg, tolerance=0.2):
         rascale = np.cos(np.deg2rad(decdeg))
-        tol2 = tolerance ** 2
-        raoff = (((self.cattable['RA_OBJ'] - radeg) + 180) % 360 - 180)  # Handle the 360-0 wrap
-        dist2 = (raoff * rascale) ** 2 + (self.cattable['DEC_OBJ'] - decdeg) ** 2
+        tol2 = tolerance**2
+        raoff = (
+            (self.cattable["RA_OBJ"] - radeg) + 180
+        ) % 360 - 180  # Handle the 360-0 wrap
+        dist2 = (raoff * rascale) ** 2 + (self.cattable["DEC_OBJ"] - decdeg) ** 2
         return self.cattable[dist2 < tol2]
 
     def allnames(self):
-        return set([row['NAME'] for row in self.cattable if row['NAME']])
+        return set([row["NAME"] for row in self.cattable if row["NAME"]])
 
     def makeindices(self):
         self.bycatnum = {}
         self.byname = {}
         self.bysimplename = {}
         for row in self.cattable:
-            if not row['CATNUM']:
+            if not row["CATNUM"]:
                 continue
-            self.bycatnum.setdefault(row['CATNUM'], []).append(row)
-            self.byname.setdefault(row['NAME'], []).append(row)
-            self.bysimplename.setdefault(self.simplename(row['NAME']), []).append(row)
+            self.bycatnum.setdefault(row["CATNUM"], []).append(row)
+            self.byname.setdefault(row["NAME"], []).append(row)
+            self.bysimplename.setdefault(self.simplename(row["NAME"]), []).append(row)
 
     @lru_cache(maxsize=0)
     def _cattable(self, catalogfilename=None):
@@ -132,4 +134,4 @@ class BATCatalog():
         :param name:
         :return:
         """
-        return re.sub('[^a-z0-9]', '', name.lower())
+        return re.sub("[^a-z0-9]", "", name.lower())

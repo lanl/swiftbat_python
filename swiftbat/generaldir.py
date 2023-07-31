@@ -21,12 +21,13 @@ import shutil
 import stat
 
 
-def subTemplate(origstring, keydict,
-                allcaps=True):  # if string includes '${FOO}' and keydict['FOO'] defined, substitute
+def subTemplate(
+    origstring, keydict, allcaps=True
+):  # if string includes '${FOO}' and keydict['FOO'] defined, substitute
     # The Template class in Python 2.4 would be the better way to do it, except that 2.4 was released yesterday (11/30/04)
     # If allcaps is true, the keys of keydict must be all caps, although the ${foo} need not be
     s = origstring
-    found = re.compile(r'''\$\{([^}]+)\}''').findall(s)
+    found = re.compile(r"""\$\{([^}]+)\}""").findall(s)
     # print(s," found ",found)
     for v in found:
         if allcaps:
@@ -44,7 +45,9 @@ def subTemplate(origstring, keydict,
 
 
 class generalDir:
-    _rewildsplitter = re.compile(r'''(?P<unwild>(/*[^$/]+[/]+)*)(?P<firstwild>[^/]*)/*(?P<restwild>.*)''')
+    _rewildsplitter = re.compile(
+        r"""(?P<unwild>(/*[^$/]+[/]+)*)(?P<firstwild>[^/]*)/*(?P<restwild>.*)"""
+    )
 
     def __init__(self, url):
         self.url = url
@@ -55,7 +58,7 @@ class generalDir:
         return re.compile(reg).findall(self.gettext(subpath))
 
     def gettext(self, subpath):
-        return self.getdata(subpath).decode('utf8')
+        return self.getdata(subpath).decode("utf8")
 
     def getdata(self, subpath):
         if self.lastsubpath != subpath or self.lastreadout == None:
@@ -64,8 +67,8 @@ class generalDir:
             self.lastreadout = self.openSub(subpath).read()
         return self.lastreadout
 
-    def exists(self, subpath=''):
-        """ Check if referenced object exists by trying to open it """
+    def exists(self, subpath=""):
+        """Check if referenced object exists by trying to open it"""
         try:
             o = self.openSub(subpath)
             o.close()
@@ -91,33 +94,46 @@ class generalDir:
 
     def copyToFile(self, subpath, fname):
         self.makeDirectoryForFile(fname)
-        shutil.copyfileobj(self.openSub(subpath), open(fname, "wb"))  # order is src, dest
+        shutil.copyfileobj(
+            self.openSub(subpath), open(fname, "wb")
+        )  # order is src, dest
 
     def matchPath(self, subpath, wildpath, matchdict=None, regexdict=None):
-        """ given a subpath and a wildcard path, with named values and
+        """given a subpath and a wildcard path, with named values and
         regular expressions in matchdict and regexdict, find directories that match
         the pattern and the pattern matched as a list of tuples (path, matchingdict)
         """
         # print("subpath = ",subpath)
-        if subpath == None: subpath = ''
-        (unwild, firstwild, restwild) = self._splitAndSub(wildpath, matchdict, regexdict)
+        if subpath == None:
+            subpath = ""
+        (unwild, firstwild, restwild) = self._splitAndSub(
+            wildpath, matchdict, regexdict
+        )
         # print("join (%s,%s)" % (subpath,unwild))
         subpath = os.path.join(subpath, unwild)  # Add the non-wild stuff to the subpath
         # print("->",subpath)
-        if not self.exists(subpath):  # if the unwild stuff doesn't exist then this is a dead end
+        if not self.exists(
+            subpath
+        ):  # if the unwild stuff doesn't exist then this is a dead end
             # print("Deadend : %s / %s" % (self.url,subpath))
             return []
         if not firstwild:  # if there is no wild part
-            assert (not restwild)  # there must not be any more wild part
+            assert not restwild  # there must not be any more wild part
             # we already checked for existence, so this is a good match
             return [(subpath, matchdict.copy())]
         else:  # There is still some wildness left
             results = []
             matchstring = subTemplate(firstwild, regexdict)
             if -1 != matchstring.find("$"):
-                print("Did not substitute variable regular expression in %s" % matchstring)
-                raise RuntimeError("Did not substitute variable regular expression in %s" % matchstring)
-            dirmatchre = re.compile(matchstring + "/*$")  # optional / allowed for directory
+                print(
+                    "Did not substitute variable regular expression in %s" % matchstring
+                )
+                raise RuntimeError(
+                    "Did not substitute variable regular expression in %s" % matchstring
+                )
+            dirmatchre = re.compile(
+                matchstring + "/*$"
+            )  # optional / allowed for directory
             dirlist = self.dirs(subpath)
             # print("in",subpath,"trying to match string",matchstring,"against",dirlist)
             # print("wildness remaining:",restwild)
@@ -126,10 +142,14 @@ class generalDir:
                 if m:  # d matches the first wild bit
                     newsubpath = os.path.join(subpath, d)
                     # print("adding",d,"to get",newsubpath)
-                    md = matchdict.copy()  # don't disturb original from one recursion level up
+                    md = (
+                        matchdict.copy()
+                    )  # don't disturb original from one recursion level up
                     md.update(m.groupdict())  # add newly discovered variables
                     if restwild:  # more to match
-                        results.extend(self.matchPath(newsubpath, restwild, md, regexdict))
+                        results.extend(
+                            self.matchPath(newsubpath, restwild, md, regexdict)
+                        )
                     else:  # nothing more
                         results.append((newsubpath, md))
             if not restwild:  # If there is no more wildness, then match might be a file
@@ -139,28 +159,34 @@ class generalDir:
                     m = filematchre.match(f)
                     if m:  # file match
                         newsubpath = os.path.join(subpath, f)
-                        md = matchdict.copy()  # don't disturb original from one recursion level up
+                        md = (
+                            matchdict.copy()
+                        )  # don't disturb original from one recursion level up
                         md.update(m.groupdict())  # add newly discovered variables
                         results.append((newsubpath, md))
             return results
 
     def _splitAndSub(self, wildpath, matchdict, regexdict):
-        """ returns a (topUNwildpath, firstwildness, restofwildpath) tuple with matches and regexes subbed in """
+        """returns a (topUNwildpath, firstwildness, restofwildpath) tuple with matches and regexes subbed in"""
         wildpath = subTemplate(wildpath, matchdict)  # Do all the matching you can
         if -1 == wildpath.find("$"):
-            return (wildpath, '', '')
+            return (wildpath, "", "")
         m = self._rewildsplitter.match(wildpath)
         # print(wildpath+"-->",m.groupdict())
-        if not m or (not m.groupdict()['firstwild'] and m.groupdict()['restwild']):
+        if not m or (not m.groupdict()["firstwild"] and m.groupdict()["restwild"]):
             # no match if totally non-wild and unslashed.  Not /-terminated, but handled above
-            assert (False)
-            assert (-1 == wildpath.find("$"))
-            return (wildpath, '', '')
-        return (m.groupdict()['unwild'], m.groupdict()['firstwild'], m.groupdict()['restwild'])
+            assert False
+            assert -1 == wildpath.find("$")
+            return (wildpath, "", "")
+        return (
+            m.groupdict()["unwild"],
+            m.groupdict()["firstwild"],
+            m.groupdict()["restwild"],
+        )
 
 
 class httpDir(generalDir):
-    """ HTTP specialization for the directory generalization
+    """HTTP specialization for the directory generalization
     Works on apache servers with autoindex generation
     A directory is read by reading from its URL with a trailing /.  (Reading without
     a trailing slash gives a redirection that this lib can't follow.)  In the
@@ -169,15 +195,22 @@ class httpDir(generalDir):
     close angle brackets, and then a repetition of the name (likewise with the trailing /
     for dirs), except the name is truncated if it is too long.   In Swift, filenames
     can be long, but directory names are short enough to not be truncated.
-    
+
     This can be fixed by adding ?F=0  (fancy listing off) to the end of the URL.  See
     http://httpd.apache.org/docs-2.0/mod/mod_autoindex.html
     """
+
     # 2008-06-30 added star to " " because some HTTP servers do not put a space in front
-    dirmatch = re.compile(r'''(?P<foundname>[^\?"/]+)/"> *(?P=foundname)/''', re.MULTILINE | re.IGNORECASE)
-    filematch = re.compile(r'''(?P<foundname>[^\?"/]+)"> *(?P=foundname)''', re.MULTILINE | re.IGNORECASE)
+    dirmatch = re.compile(
+        r"""(?P<foundname>[^\?"/]+)/"> *(?P=foundname)/""", re.MULTILINE | re.IGNORECASE
+    )
+    filematch = re.compile(
+        r"""(?P<foundname>[^\?"/]+)"> *(?P=foundname)""", re.MULTILINE | re.IGNORECASE
+    )
     # And some servers do not evevn understand the /?F=0 non-fancy readout
-    filenofancymatch = re.compile(r'''HREF="(?P<foundname>[^\?"/]+)">''', re.MULTILINE | re.IGNORECASE)
+    filenofancymatch = re.compile(
+        r"""HREF="(?P<foundname>[^\?"/]+)">""", re.MULTILINE | re.IGNORECASE
+    )
 
     validurlmatch = re.compile("https?://", re.IGNORECASE)
 
@@ -193,19 +226,19 @@ class httpDir(generalDir):
         try:
             return self.filecache[subdir]
         except:
-            files = self.getMatches(subdir + '/?F=0', self.filematch)
+            files = self.getMatches(subdir + "/?F=0", self.filematch)
             self.filecache[subdir] = files
             return files
 
     def filesNoFancy(self, subdir=""):  #
-        files = self.getMatches(subdir + '/?F=0', self.filenofancymatch)
+        files = self.getMatches(subdir + "/?F=0", self.filenofancymatch)
         return files
 
     def dirs(self, subdir=""):
         try:
             return self.dircache[subdir]
         except:
-            dirs = self.getMatches(subdir + '/?F=0', self.dirmatch)
+            dirs = self.getMatches(subdir + "/?F=0", self.dirmatch)
             self.dircache[subdir] = dirs
             return dirs
 
@@ -214,8 +247,12 @@ class httpDir(generalDir):
 
 
 class ftpDir(generalDir):
-    _filelinematch = re.compile(r'''(?<=^-[r-][w-].[r-][w-].r..\s).+$''', re.MULTILINE | re.IGNORECASE)
-    _dirlinematch = re.compile(r'''(?<=^d[r-][w-].[r-][w-].r..\s).+$''', re.MULTILINE | re.IGNORECASE)
+    _filelinematch = re.compile(
+        r"""(?<=^-[r-][w-].[r-][w-].r..\s).+$""", re.MULTILINE | re.IGNORECASE
+    )
+    _dirlinematch = re.compile(
+        r"""(?<=^d[r-][w-].[r-][w-].r..\s).+$""", re.MULTILINE | re.IGNORECASE
+    )
     _namematch = re.compile("\S+\s*$")  # last string of nonwhite characters before eol
 
     def __init__(self, url):
@@ -224,18 +261,18 @@ class ftpDir(generalDir):
         generalDir.__init__(self, url)
 
     def files(self, subdir=""):
-        lines = self.getMatches(subdir + '/', self._filelinematch)
+        lines = self.getMatches(subdir + "/", self._filelinematch)
         return [self._namematch.findall(l.strip())[0] for l in lines]
 
     def dirs(self, subdir=""):
-        lines = self.getMatches(subdir + '/', self._dirlinematch)
+        lines = self.getMatches(subdir + "/", self._dirlinematch)
         return [self._namematch.findall(l.strip())[0] for l in lines]
 
 
 class localDir(generalDir):
     def __init__(self, url):
         # print("Trying %s as local file" % url)
-        nofileurl = re.compile(r'''(?<=FILE://)([^>]*)''', re.IGNORECASE).findall(url)
+        nofileurl = re.compile(r"""(?<=FILE://)([^>]*)""", re.IGNORECASE).findall(url)
         if len(nofileurl):
             self.dirname = os.path.realpath(nofileurl[0])
         else:
@@ -245,29 +282,41 @@ class localDir(generalDir):
     def dirs(self, subdir=""):
         d = os.path.join(self.dirname, subdir)
         # IMPROVEME  use os.scandir for python >= 3.5
-        if hasattr(os, 'scandir'):
+        if hasattr(os, "scandir"):
             # Python >= 3.5
-            return [x.name for x in os.scandir('/Volumes/DATA/Swift/swift') if x.is_dir()]
+            return [
+                x.name for x in os.scandir("/Volumes/DATA/Swift/swift") if x.is_dir()
+            ]
         else:
             allindir = os.listdir(d)
             # FIXME chokes on aliases or links to files that don't exist
             # IMPROVEME  use os.path.isdir
-            return [x for x in allindir if stat.S_ISDIR(os.stat(os.path.join(d, x))[stat.ST_MODE])]
+            return [
+                x
+                for x in allindir
+                if stat.S_ISDIR(os.stat(os.path.join(d, x))[stat.ST_MODE])
+            ]
 
     def files(self, subdir=""):
         d = os.path.join(self.dirname, subdir)
-        if hasattr(os, 'scandir'):
+        if hasattr(os, "scandir"):
             # Python >= 3.5
-            return [x.name for x in os.scandir('/Volumes/DATA/Swift/swift') if x.is_file()]
+            return [
+                x.name for x in os.scandir("/Volumes/DATA/Swift/swift") if x.is_file()
+            ]
         else:
             allindir = os.listdir(d)
-            return [x for x in allindir if stat.S_ISREG(os.stat(os.path.join(d, x))[stat.ST_MODE])]
+            return [
+                x
+                for x in allindir
+                if stat.S_ISREG(os.stat(os.path.join(d, x))[stat.ST_MODE])
+            ]
 
     def openSub(self, subpath):
         open(os.path.join(self.dirname, subpath))
 
-    def exists(self, subpath=''):
-        """ Check if referenced object exists by trying to open it """
+    def exists(self, subpath=""):
+        """Check if referenced object exists by trying to open it"""
         try:
             # print("does %s exist?" % os.path.join(self.dirname,subpath))
             mode = os.stat(os.path.join(self.dirname, subpath))[stat.ST_MODE]
@@ -283,8 +332,8 @@ class localDir(generalDir):
             return False
 
     def makedirs(self, subpath):
-        """ No analog method or HTTP and FTP genDirectories.
-        Make the entire string of directories to the given subpath """
+        """No analog method or HTTP and FTP genDirectories.
+        Make the entire string of directories to the given subpath"""
         try:
             os.makedirs(os.path.join(self.dirname, subpath))
         except:
@@ -312,7 +361,8 @@ def dive(url, depth, indent=0):
         instring = ("%%%0is" % indent) % " "
         print(instring, "%s:" % url)
         instring += "    "
-        if len(files): print(instring, files)
+        if len(files):
+            print(instring, files)
         if depth > 0:
             for subdir in dirs:
                 dive(url + "/" + subdir, depth - 1, indent + 4)
@@ -321,21 +371,26 @@ def dive(url, depth, indent=0):
 
 
 def main():
-    regexdict = {'SEQNUM': '(?P<SEQNUM>[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9])',
-                 'OBSERVATORY': '(?P<OBSERVATORY>sw)', 'VERSION': '(?P<VERSION>[0-9][0-9][0-9])',
-                 'TYPE': '(?P<TYPE>\\W+)', 'CODINGSUFFIXES': '(?P<CODINGSUFFIXES>(.gz|.pgp)*)'}
-    for url in ('https://heasarc.gsfc.nasa.gov/FTP/swift/data/',
-                'https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/2005_04',
-                # 'http://swift.gsfc.nasa.gov/SDC/data/local/data1/data', # Previous location of quicklook
-                # 'https://swift.gsfc.nasa.gov/data/swift/'  # No longer works (gives a page instead of a dir listing)
-                ):
+    regexdict = {
+        "SEQNUM": "(?P<SEQNUM>[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9])",
+        "OBSERVATORY": "(?P<OBSERVATORY>sw)",
+        "VERSION": "(?P<VERSION>[0-9][0-9][0-9])",
+        "TYPE": "(?P<TYPE>\\W+)",
+        "CODINGSUFFIXES": "(?P<CODINGSUFFIXES>(.gz|.pgp)*)",
+    }
+    for url in (
+        "https://heasarc.gsfc.nasa.gov/FTP/swift/data/",
+        "https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/2005_04",
+        # 'http://swift.gsfc.nasa.gov/SDC/data/local/data1/data', # Previous location of quicklook
+        # 'https://swift.gsfc.nasa.gov/data/swift/'  # No longer works (gives a page instead of a dir listing)
+    ):
         print(url)
         archive = getDir(url)
         print("----------------")
-        dirpaths = archive.matchPath('', '(sw)?${seqnum}(.${version})?', {}, regexdict)
+        dirpaths = archive.matchPath("", "(sw)?${seqnum}(.${version})?", {}, regexdict)
         print("----------------")
-        for (obsdir, d) in dirpaths:
-            print(obsdir, d['SEQNUM'], d['VERSION'])
+        for obsdir, d in dirpaths:
+            print(obsdir, d["SEQNUM"], d["VERSION"])
     print("----------------")
     # print(archdir.matchPath("","sw${seqnum}.${version}",{},cache.regexdict))
     # print(archdir.matchPath("","sw${seqnum}.023"+"/"+cache.typepatterns['pob.cat']+'${CODINGSUFFIXES}',{},cache.regexdict))
