@@ -1318,6 +1318,8 @@ def swinfo_main(argv=None, debug=None):
                         return
             if visible or not visible_only:
                 sys.stdout.write(pointprint.getvalue())
+    except getopt.GetoptError:
+        usage(argv[0])
     except:
         usage(argv[0])
         traceback.print_exc()

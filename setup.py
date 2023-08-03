@@ -51,7 +51,7 @@ setup(
         "astroquery",
         "numpy",
         "python-dateutil",
-        "skyfield>1.3",
+        "skyfield>1.4",
         "swifttools",
     ],
     classifiers=[
