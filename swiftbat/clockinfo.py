@@ -1,12 +1,11 @@
-from __future__ import division, print_function
-
 import os
 import sys
 import glob
 import datetime
-import re
 from pathlib import Path
 from .generaldir import httpDir
+from astropy.io import fits
+
 
 """
 From the FITS file:
@@ -66,7 +65,6 @@ class clockErrData:
     def __init__(self):
         try:
             self._clockfile = self.clockfile()
-            from astropy.io import fits
 
             f = fits.open(self._clockfile)
             # copies are needed to prevent pyfits from holding open a file handle for each item
@@ -145,7 +143,15 @@ class clockErrData:
 
     def clockfile(self):
         for clockdir in self.clocklocalsearchpath:
+            # Directory must exist and have readable clock files in it.
             if os.path.exists(clockdir):
+                try:
+                    clockfile = sorted(
+                        list(glob.glob(os.path.join(clockdir, self.clockfilepattern)))
+                    )[-1]
+                    clockdata = fits.getdata(clockfile)
+                except:
+                    continue
                 break
         else:
             for clockdir in self.clocklocalsearchpath:

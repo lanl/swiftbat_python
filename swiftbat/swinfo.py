@@ -34,15 +34,14 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 
 """
 
+
 import os
 import sys
-
 import functools
 from pathlib import Path
 import re
 import datetime
 import shutil
-
 import glob
 import gzip
 import traceback
@@ -58,27 +57,21 @@ from astropy.coordinates import ICRS, SkyCoord, Angle as apAngle
 import numpy as np
 from io import StringIO
 from functools import lru_cache as __lru_cache
-
 import swifttools.swift_too as swto
-
 from urllib.request import urlopen, quote
 from swiftbat import generaldir
 import skyfield.api as sf_api
 from skyfield.trigonometry import position_angle_of as sf_position_angle_of
 from skyfield.positionlib import ICRF as sf_ICRF
-
-# import bs4 as BeautifulSoup
-# import ephem
-
 import sqlite3  # Good sqlite3 tutorial at http://www.w3schools.com/sql/default.asp
+from typing import List, Tuple
+
+
 
 split_translate = str.maketrans("][, \t;", "      ")
-
 # Skyfield interfaces
-
 _sf_load = sf_api.Loader("~/.skyfield", verbose=False)
 _sf_ts = _sf_load.timescale(builtin=True)
-
 
 @__lru_cache(0)
 def loadsfephem():
@@ -137,7 +130,8 @@ TLEpattern = [
 tlefile = "/tmp/latest_swift_tle.gz"
 tlebackup = os.path.expanduser("~/.swift/recent_swift_tle.gz")
 
-radecnameRE = re.compile(r"""^(?P<rastring>[0-9.]+)_+(?P<decstring>([-+]*[0-9.]+))$""")
+radecnameRE = re.compile(
+    r"""^(?P<rastring>[0-9.]+)_+(?P<decstring>([-+]*[0-9.]+))$""")
 
 ipntimeRE = re.compile(
     r"""'(?P<mission>[^']+)'\s*'(?P<d>[ 0-9]+)/(?P<m>[ 0-9]+)/(?P<y>[ 0-9]+)'\s+(?P<s>[0-9.]+)"""
@@ -218,7 +212,8 @@ class orbit:
         nTLE = len(allTLE) // 2
         self._tleByTime = [
             (
-                datetime.datetime(2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0)
+                datetime.datetime(
+                    2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0)
                 + datetime.timedelta(float(allTLE[2 * i][20:32]) - 1),
                 ("Swift", allTLE[2 * i], allTLE[2 * i + 1]),
             )
@@ -237,10 +232,11 @@ class orbit:
             for w in range(len(self._tleByTime) - 1, -1, -1):
                 if self._tleByTime[w][0] < t or w == 0:
                     self._tle = self._tleByTime[w][1]
-                    self._tletimes = [self._tleByTime[w][0], self._tleByTime[w + 1][0]]
+                    self._tletimes = [self._tleByTime[w]
+                                      [0], self._tleByTime[w + 1][0]]
                     break
 
-    def getSatellite(self, t) -> tuple[sf_api.EarthSatellite, sf_api.Time]:
+    def getSatellite(self, t) -> Tuple[sf_api.EarthSatellite, sf_api.Time]:
         """Produces skyfield.EarthSatellite and its location for Swift at the given time
 
         Args:
@@ -260,7 +256,8 @@ class orbit:
                 "Picked TLE for %s < %s < %s"
                 % (self._tletimes[0], t, self._tletimes[1])
             )
-        sat = sf_api.EarthSatellite(self._tle[1], self._tle[2], name=self._tle[0])
+        sat = sf_api.EarthSatellite(
+            self._tle[1], self._tle[2], name=self._tle[0])
         sft = sftime(t)
         return sat, sat.at(sft)
 
@@ -304,7 +301,8 @@ class orbit:
                     for f in auxfiles:
                         if tlematch.match(f):
                             if verbose:
-                                print("Copying TLEs from " + obs + "/auxil/" + f)
+                                print("Copying TLEs from " +
+                                      obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
                             try:
                                 shutil.copyfile(tlefile, tlebackup)
@@ -340,8 +338,8 @@ def batExposure(theta, phi):
     if np.cos(theta) < 0:
         return (0.0, np.cos(theta))
     # BAT dimensions
-    detL = 286 * 4.2e-3  ## Amynote: each det element is has length 4.2e-3 m
-    detW = 173 * 4.2e-3  ## Amynote: each det element is has length 4.2e-3 m
+    detL = 286 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
+    detW = 173 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
     maskL = 487 * 5.0e-3  # Using the 5 mm mask cells, true size is 95.9" x 47.8"
     maskW = 243 * 5.0e-3
     efl = 1.00
@@ -413,7 +411,8 @@ def detid2xy(detids):
     # 122                          66  61                          5
     # 121                          65  62                          6    imod  ->
     # 120 112 104  96  88  80  72  64  63  55  47  39  31  23  15  7
-    bit6, bit5_0 = np.divmod(det_in_mod, np.int16(64))  # bit7 is left or right half
+    # bit7 is left or right half
+    bit6, bit5_0 = np.divmod(det_in_mod, np.int16(64))
     bit6_3, bit2_0 = np.divmod(
         det_in_mod, np.int16(8)
     )  # bits 6-3 determine the imod, bits 2-0 jmod
@@ -431,7 +430,8 @@ def detid2xy(detids):
     # 6    14          iblock ---->
 
     bit10, bit9_7 = np.divmod(mod_in_block, np.int16(8))
-    iblock = imod + np.int16(18) * bit10  # 16 detectors + 2-space gap for second column
+    # 16 detectors + 2-space gap for second column
+    iblock = imod + np.int16(18) * bit10
     jmodrow = (np.array([6, 7, 4, 5, 2, 3, 0, 1]) * 11).astype(
         np.int16
     )  # 8 detectors and 3-space gap for each row of modules
@@ -444,7 +444,8 @@ def detid2xy(detids):
     bit15, bit14_11 = np.divmod(block, np.int16(8))
     #                      8-15        0-7
     y = np.where(bit15, np.int16(85) - jblock - 1, np.int16(88) + jblock)
-    x = np.where(bit15, np.int16(34) - iblock - 1, iblock) + np.int16(36) * bit14_11
+    x = np.where(bit15, np.int16(34) - iblock - 1,
+                 iblock) + np.int16(36) * bit14_11
     if scalar:
         x = np.int16(x)
         y = np.int16(y)
@@ -513,7 +514,8 @@ class source:
         # elif...
         if "ra" in kwargs and "dec" in kwargs:
             if initstring:
-                raise RuntimeError("Give ra=,dec= or an initstring but not both")
+                raise RuntimeError(
+                    "Give ra=,dec= or an initstring but not both")
             self.set_radec(kwargs["ra"], kwargs["dec"])
             self.name = kwargs.get("name", "unnamed")
             self.catnum = kwargs.get("catnum", 0)
@@ -580,7 +582,7 @@ class source:
 
     def thetangle_phi(
         self, ra: float, dec: float, roll: float
-    ) -> tuple((apAngle, apAngle)):
+    ) -> Tuple[(apAngle, apAngle)]:
         """_Source position in instrument FOV given instrument pointing direction
             returns (thetangle,phi) where thetangle is the angular distance from
             the boresight and phi is the angle from the phi=0 axis of BAT.
@@ -596,7 +598,8 @@ class source:
             (theta:degree, phi:apAngle): location of source in spacecraft spherical coordinates
         """
         # Use astropy coordinates
-        boreloc = SkyCoord(ICRS(ra=apAngle(ra, u.deg), dec=apAngle(dec, u.deg)))
+        boreloc = SkyCoord(
+            ICRS(ra=apAngle(ra, u.deg), dec=apAngle(dec, u.deg)))
         thetangle = boreloc.separation(self.skyloc).to(u.deg)
         # posang is CCW, phi is CCW from +Y so (posang - roll - 90deg) gives phi
         phi = (
@@ -644,7 +647,8 @@ class sunsource(source):
         app = self.earth.at(t).observe(self.body).apparent()
         ra, dec, _ = app.radec()
         skyloc = SkyCoord(
-            ICRS(ra=apAngle(ra._degrees, u.deg), dec=apAngle(dec._degrees, u.deg))
+            ICRS(ra=apAngle(ra._degrees, u.deg),
+                 dec=apAngle(dec._degrees, u.deg))
         )
         return skyloc
 
@@ -685,7 +689,10 @@ class sourcelist:
                 self.allsources[self.canonName(aSource.name)] = aSource
         else:
             for line in open(file).readlines():
-                if "+------+------------+" in line:
+                line = line.strip()
+                if ("+------+------------+" in line or
+                    "|   ROW|        TIME|           NAME|" in line or
+                        line.startswith("#") or line == ""):
                     continue
                 try:
                     aSource = source(line)
@@ -749,7 +756,8 @@ def parseNotice(lines):
                 elif ls[0] in ["GRB_DEC:", "SRC_DEC:"]:
                     dec_deg = float(ls[1].split("d")[0].strip(strippers))
                 elif ls[0] in ["GRB_DATE:", "DISCOVERY_DATE:"]:
-                    ymdT = "20%s-%s-%sT" % tuple(ls[5].strip(strippers).split("/"))
+                    ymdT = "20%s-%s-%sT" % tuple(
+                        ls[5].strip(strippers).split("/"))
                 elif ls[0] in ["GRB_TIME:", "DISCOVERY_TIME:"]:
                     hms = ls[3].strip(strippers + "{}")
 
@@ -763,7 +771,8 @@ def parseNotice(lines):
                     "DISCOVERY_DATE:",
                     "TRIGGER_DATE:",
                 ]:
-                    ymdT = "20%s-%s-%sT" % tuple(ls[5].strip(strippers).split("/"))
+                    ymdT = "20%s-%s-%sT" % tuple(
+                        ls[5].strip(strippers).split("/"))
                 elif ls[0] in [
                     "GRB_TIME:",
                     "DISCOVERY_TIME:",
@@ -796,7 +805,8 @@ def lineofsight(satpos, source):
         losheight_m = 0.0
         description = "down"
     else:
-        losheight_m = (satradius_m * np.cos(zenangle_rad - np.pi / 2)) - earthrad_m
+        losheight_m = (
+            satradius_m * np.cos(zenangle_rad - np.pi / 2)) - earthrad_m
         if losheight_m > atm_thickness_m:
             description = "depressed but unattenuated"
         else:
@@ -825,7 +835,7 @@ class PointingEntry:
         self._planned = planned
 
     @classmethod
-    def listfromquery(cls, query: swto.ObsQuery) -> list["PointingEntry"]:
+    def listfromquery(cls, query: swto.ObsQuery) -> List["PointingEntry"]:
         result = []
         for entry in query:
             # query.to_utctime()
@@ -943,7 +953,8 @@ def swinfo_main(argv=None, debug=None):
 
     if debug:
         debug.write(
-            "%s (%d): %s\n" % (datetime.datetime.now(), os.getpid(), " ".join(argv))
+            "%s (%d): %s\n" % (datetime.datetime.now(),
+                               os.getpid(), " ".join(argv))
         )
         vebose = True
         debug.flush()
@@ -998,7 +1009,8 @@ def swinfo_main(argv=None, debug=None):
                         s = (
                             "|||"
                             + v
-                            + ("||0||||%(rastring)s|%(decstring)s|" % m.groupdict())
+                            + ("||0||||%(rastring)s|%(decstring)s|" %
+                               m.groupdict())
                         )
                         sources.append(source(s))
                     else:
@@ -1016,7 +1028,8 @@ def swinfo_main(argv=None, debug=None):
             elif o in ("-c", "--clipboard"):
                 for ttry in os.popen("/usr/bin/pbpaste | tr '\r' '\n'"):
                     try:
-                        t = swutil.string2met(ttry, nocomplaint=True, correct=True)
+                        t = swutil.string2met(
+                            ttry, nocomplaint=True, correct=True)
                         if t:
                             metvalues.append(t)
                     except:
@@ -1025,7 +1038,8 @@ def swinfo_main(argv=None, debug=None):
                 format = v
             elif o in ("-p", "--position"):
                 try:
-                    ra, dec = [float(s) for s in v.translate(split_translate).split()]
+                    ra, dec = [float(s)
+                               for s in v.translate(split_translate).split()]
                     string = "|||%s||%d||||%f|%f|" % (v, len(sources), ra, dec)
                     newsource = source(string)
                     sources.append(newsource)
@@ -1146,7 +1160,8 @@ def swinfo_main(argv=None, debug=None):
 
         for t in metvalues:
             pointprint = StringIO()
-            visible = len(sources) == 0  # even if visible_only, print if no sources
+            # even if visible_only, print if no sources
+            visible = len(sources) == 0
             utcf_ = utcf(t, verbose)
             udelta = datetime.timedelta(seconds=utcf_)
             if hasLength(utcf_):
@@ -1161,7 +1176,8 @@ def swinfo_main(argv=None, debug=None):
                 pystarttime = pytime
             for i in range(len(ulist)):
                 if not terse:
-                    print("Time(MET + UTCF -> UT):   ", file=pointprint, end="")
+                    print("Time(MET + UTCF -> UT):   ",
+                          file=pointprint, end="")
                 print(
                     "%.3f + %.3f -> %s"
                     % (
@@ -1190,7 +1206,8 @@ def swinfo_main(argv=None, debug=None):
             if orbits:
                 if debug:
                     debug.write(
-                        "About to get the satellite position for %s\n" % (pystarttime,)
+                        "About to get the satellite position for %s\n" % (
+                            pystarttime,)
                     )
                     debug.flush()
                 sat, satpos = orbits.getSatellite(pystarttime)
@@ -1327,7 +1344,8 @@ def swinfo_main(argv=None, debug=None):
             traceback.print_exc(None, debug)
         # traceback.print_tb(sys.exc_info()[2])
     if debug:
-        debug.write("%s: swinfo main() completed\n" % (datetime.datetime.now(),))
+        debug.write("%s: swinfo main() completed\n" %
+                    (datetime.datetime.now(),))
         debug.flush()
 
 

@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import print_function, division, absolute_import
-
 """
 generaldir:
 Treat http, ftp, and local files equally as a general directory structure
