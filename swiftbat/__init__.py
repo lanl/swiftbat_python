@@ -17,8 +17,7 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 
 """
 
-from __future__ import print_function, division, absolute_import
-
+from .sfmisc import sftime, sfts, loadsfephem
 from .clockinfo import utcf
 from .swutil import *
 from .swinfo import *

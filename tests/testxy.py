@@ -22,27 +22,26 @@ class TestXY(unittest.TestCase):
     def test_detid2xy_scalar(self):
         sample = self.getsample()
         for samplerow in sample[0:100]:
-            x, y = swiftbat.detid2xy(samplerow['DET_ID'])
-            assert (x, y) == (samplerow['DETX'], samplerow['DETY'])
+            x, y = swiftbat.detid2xy(samplerow["DET_ID"])
+            assert (x, y) == (samplerow["DETX"], samplerow["DETY"])
 
     def test_detid2xy_array(self):
         sample = self.getsample()
-        x, y = swiftbat.detid2xy(sample['DET_ID'])
-        assert np.allclose(x, sample['DETX'])
-        assert np.allclose(y, sample['DETY'])
+        x, y = swiftbat.detid2xy(sample["DET_ID"])
+        assert np.allclose(x, sample["DETX"])
+        assert np.allclose(y, sample["DETY"])
 
     def test_xy2detid_scalar(self):
         sample = self.getsample()
         for samplerow in sample[0:100]:
-            detid = swiftbat.xy2detid(samplerow['DETX'], samplerow['DETY'])
-            assert detid == samplerow['DET_ID']
+            detid = swiftbat.xy2detid(samplerow["DETX"], samplerow["DETY"])
+            assert detid == samplerow["DET_ID"]
 
     def test_xy2detid_array(self):
         sample = self.getsample()
-        detid = swiftbat.xy2detid(sample['DETX'], sample['DETY'])
-        assert np.allclose(detid, sample['DET_ID'])
+        detid = swiftbat.xy2detid(sample["DETX"], sample["DETY"])
+        assert np.allclose(detid, sample["DET_ID"])
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
