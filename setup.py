@@ -1,6 +1,6 @@
 from setuptools import setup
 
-copyright="""
+copyright = """
 Copyright (c) 2018, Triad National Security, LLC. All rights reserved.
  
 This program was produced under U.S. Government contract
@@ -28,27 +28,38 @@ THIS SOFTWARE IS PROVIDED BY TRIAD NATIONAL SECURITY, LLC AND CONTRIBUTORS "AS I
 """
 
 try:
-    with open("README.md", 'r') as f:
+    with open("README.md", "r") as f:
         long_description = f.read()
 except FileNotFoundError:
-    long_description = ''
+    long_description = ""
 
 setup(
-    name='swiftbat',
-    version='0.1.2a3',
-    packages=['swiftbat'],
-    package_data={'':['catalog', 'recent_bcttb.fits.gz']},
-    url='https://github.com/lanl/swiftbat_python/',
-    license='BSD-3-Clause',
-    author='David M. Palmer',
-    author_email='palmer@lanl.gov',
-    description='Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory',
+    name="swiftbat",
+    version="0.1.4",
+    packages=["swiftbat"],
+    package_data={"": ["catalog", "recent_bcttb.fits.gz"]},
+    url="https://github.com/lanl/swiftbat_python/",
+    license="BSD-3-Clause",
+    author="David M. Palmer",
+    author_email="palmer@lanl.gov",
+    description="Routines for dealing with data from BAT on the Neil Gehrels Swift Observatory",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    entry_points={'console_scripts': ['swinfo=swiftbat.swinfo:main']},
-    install_requires = ['beautifulsoup4', 'pyephem', 'astropy', 'astroquery', 'numpy'],
-    classifiers=['Development Status :: 3 - Alpha', 'Intended Audience :: Science/Research', 'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Topic :: Scientific/Engineering :: Astronomy', ],
-    python_requires='>=3.6',
+    long_description_content_type="text/markdown",
+    entry_points={"console_scripts": ["swinfo=swiftbat.swinfo:swinfo_main"]},
+    install_requires=[
+        "astropy>=5",
+        "astroquery",
+        "numpy",
+        "python-dateutil",
+        "skyfield>=1.4",
+        "swifttools",
+    ],
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering :: Astronomy",
+    ],
+    python_requires=">=3.9",
 )

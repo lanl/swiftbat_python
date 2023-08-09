@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import print_function, division, absolute_import
-
 """
 swutil
 Utilities for dealing with Swift Data
@@ -41,13 +39,6 @@ This code was developed using funding from the National Aeronautics and Space Ad
 
 import os
 import sys
-
-# print __file__
-# add the path of this module to the searchpath to let helpers in 
-execdir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-if not execdir in map(os.path.abspath, sys.path):
-    sys.path.append(execdir)
-
 import re
 import datetime
 from .clockinfo import utcf
@@ -56,29 +47,37 @@ import io
 # 2004-12-05T19:43:27
 refitstime = re.compile(
     r"(?P<year>[0-9]{4,4})-(?P<month>[0-9]{1,2})-(?P<day>[0-9]{1,2})([T ]+(?P<hour>[0-9]{1,2}):(?P<minute>[0-9]{2,2})(:(?P<second>[0-9]{2,2})([.](?P<fracsecond>[0-9]*))?)?)?",
-    re.I)
+    re.I,
+)
 # 2004:329:12:15:07
 redoytime = re.compile(
-    r"(?P<year>[0-9]{4,4}):(?P<doy>[0-9]{3,3})(:(?P<hour>[0-9]{2,2}):(?P<minute>[0-9]{2,2})(:(?P<second>[0-9]{2,2})([.](?P<fracsecond>[0-9]*))?)?)?")
+    r"(?P<year>[0-9]{4,4}):(?P<doy>[0-9]{3,3})(:(?P<hour>[0-9]{2,2}):(?P<minute>[0-9]{2,2})(:(?P<second>[0-9]{2,2})([.](?P<fracsecond>[0-9]*))?)?)?"
+)
 # JD2454192.8273
 rejdtime = re.compile(r"JD[ ]*24(?P<mytruncjd>[0-9]+(.[0-9]*)?)", re.I)
 # MJD14192.5273
 remjdtime = re.compile(r"MJD[ ]*(?P<mjd>[0-9]+(.[0-9]*)?)", re.I)
 # 140308_13764   IPN seconds of day type format
-reIPNsod = re.compile(r"(?P<year>[0-9]{2,4})-?(?P<month>[0-9]{2})-?(?P<day>[0-9]{2})_(T?)(?P<sod>[0-9]{5}(\.[0-9]*)?)")
+reIPNsod = re.compile(
+    r"(?P<year>[0-9]{2,4})-?(?P<month>[0-9]{2})-?(?P<day>[0-9]{2})_(T?)(?P<sod>[0-9]{5}(\.[0-9]*)?)"
+)
 # General time with multiple options for date and time
 # Using slashes to separate ymd is disallowed because it could also
 # be m/d/y or d/m/y.  '-' or nothing may be (consistently) used
 # ydoy , y-doy or y:doy allowed with y 2 or 4 dig, doy always 3 dig
-reday_s = (r"""((?P<year>(\d{2})|(\d{4}))"""  # 2 or 4 digit year
-           r"""("""  # either DOY or Month,day
-           r"""([:-]?(?P<doy>\d{3}))|"""
-           r"""((?P<ymdsep>-?)(?P<month>[0-9]{1,2})(?P=ymdsep)(?P<day>[0-9]{1,2}))))""")
+reday_s = (
+    r"""((?P<year>(\d{2})|(\d{4}))"""  # 2 or 4 digit year
+    r"""("""  # either DOY or Month,day
+    r"""([:-]?(?P<doy>\d{3}))|"""
+    r"""((?P<ymdsep>-?)(?P<month>[0-9]{1,2})(?P=ymdsep)(?P<day>[0-9]{1,2}))))"""
+)
 # sod must be 5 integer digits plus optional decimal and fraction
-retime_s = (r"[ _]*?(([ _ST](?P<sod>[0-9]{5}(\.[0-9]*)?))"
-            r"|([ _T](?P<hour>[0-9]{2})"
-            r"(?P<tsep>:?)(?P<minute>[0-9]{2})"
-            r"((?P=tsep)(?P<second>[0-9]{2}(\.[0-9]*)?))?))")
+retime_s = (
+    r"[ _]*?(([ _ST](?P<sod>[0-9]{5}(\.[0-9]*)?))"
+    r"|([ _T](?P<hour>[0-9]{2})"
+    r"(?P<tsep>:?)(?P<minute>[0-9]{2})"
+    r"((?P=tsep)(?P<second>[0-9]{2}(\.[0-9]*)?))?))"
+)
 reGeneral = re.compile(reday_s + retime_s, re.I)
 # 2004:329:12:15:07)
 
@@ -92,9 +91,10 @@ _jd_mjd_diff = 2400000.5
 fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
+
 def any2datetime(arg, correct=True, mjd=False, jd=False):
     """Change the argument into a (naive) datetime
-    
+
     Understands:
         strings as accepted by string2datetime
         astropy, skyfield, or pyephem dates
@@ -104,8 +104,8 @@ def any2datetime(arg, correct=True, mjd=False, jd=False):
     """
     if isinstance(arg, str):
         return string2datetime(arg, correct=correct)
-    for convname in ('to_datetime', 'utc_datetime', 'datetime'):
-                # astropy, skyfield, pyephem
+    for convname in ("to_datetime", "utc_datetime", "datetime"):
+        # astropy, skyfield, pyephem
         if hasattr(arg, convname):
             return getattr(arg, convname)(arg)
     if isinstance(arg, (float, int)):
@@ -117,7 +117,7 @@ def any2datetime(arg, correct=True, mjd=False, jd=False):
             return met2datetime(arg, correct=correct)
     try:
         return [any2datetime(arg_, correct=True, mjd=mjd, jd=jd) for arg_ in arg]
-    except TypeError:   # Not iterable (assuming thrown by 'for')
+    except TypeError:  # Not iterable (assuming thrown by 'for')
         pass
 
 
@@ -137,30 +137,31 @@ def string2datetime(s, nocomplaint=False, correct=False):
         if m:
             mgd = m.groupdict()
             try:
-                year = int(mgd['year'])
+                year = int(mgd["year"])
                 if year < 100:
                     # Use 1960-2060 for 2-digit years
                     year += 2000 if (year < 60) else 1900
-                if mgd['doy'] is not None:
-                    doy = int(mgd['doy'])
+                if mgd["doy"] is not None:
+                    doy = int(mgd["doy"])
                     date = datetime.date(year=year) + datetime.timedelta(days=doy - 1)
                 else:
-                    month = int(mgd['month'])
-                    day = int(mgd['day'])
+                    month = int(mgd["month"])
+                    day = int(mgd["day"])
                     date = datetime.date(year=year, month=month, day=day)
-                if mgd['sod'] is not None:
-                    addseconds = float(mgd['sod'])
+                if mgd["sod"] is not None:
+                    addseconds = float(mgd["sod"])
                     tod = datetime.time(0)
                 else:
-                    hour = int(mgd['hour'])
-                    minute = int(mgd['minute'])
+                    hour = int(mgd["hour"])
+                    minute = int(mgd["minute"])
                     try:
-                        addseconds = float(mgd['second'])
+                        addseconds = float(mgd["second"])
                     except:
                         addseconds = 0.0
                     tod = datetime.time(hour=hour, minute=minute)
-                d = (datetime.datetime.combine(date, tod)
-                     + datetime.timedelta(seconds=addseconds))
+                d = datetime.datetime.combine(date, tod) + datetime.timedelta(
+                    seconds=addseconds
+                )
                 return d
             except Exception as e:
                 print(e)
@@ -168,53 +169,73 @@ def string2datetime(s, nocomplaint=False, correct=False):
         m = reIPNsod.match(s)
         if m:  # 140308_13764
             mgd = m.groupdict()
-            year = int(mgd['year'])
+            year = int(mgd["year"])
             if year < 100:
                 # Use 1960-2060 for 2-digit years
                 year += 2000 if (year < 60) else 1900
-            month = int(mgd['month'])
-            day = int(mgd['day'])
-            sod = float(mgd['sod'])
-            d = datetime.datetime(year=year, month=month, day=day) + datetime.timedelta(seconds=sod)
+            month = int(mgd["month"])
+            day = int(mgd["day"])
+            sod = float(mgd["sod"])
+            d = datetime.datetime(year=year, month=month, day=day) + datetime.timedelta(
+                seconds=sod
+            )
             return d
         m = refitstime.match(s)
         if m:  # 2004-12-05T19:43:27
             mgd = m.groupdict()
-            if mgd['fracsecond'] == None:
-                mgd['microsecond'] = 0
+            if mgd["fracsecond"] == None:
+                mgd["microsecond"] = 0
             else:
-                mgd['microsecond'] = int(1e6 * float("0." + mgd['fracsecond']))
+                mgd["microsecond"] = int(1e6 * float("0." + mgd["fracsecond"]))
             for k in mgd.keys():
                 if mgd[k]:
                     mgd[k] = int(mgd[k])
                 else:
                     mgd[k] = 0
-            d = datetime.datetime(year=mgd['year'], month=mgd['month'], day=mgd['day'], hour=mgd['hour'],
-                                  minute=mgd['minute'], second=mgd['second'], microsecond=mgd['microsecond'])
+            d = datetime.datetime(
+                year=mgd["year"],
+                month=mgd["month"],
+                day=mgd["day"],
+                hour=mgd["hour"],
+                minute=mgd["minute"],
+                second=mgd["second"],
+                microsecond=mgd["microsecond"],
+            )
             return d
         m = redoytime.match(s)
         if m:  # 2004:329:12:15:07
             mgd = m.groupdict()
-            if mgd['fracsecond'] == None:
-                mgd['microsecond'] = 0
+            if mgd["fracsecond"] == None:
+                mgd["microsecond"] = 0
             else:
-                mgd['microsecond'] = int(1e6 * float("0." + mgd['fracsecond']))
+                mgd["microsecond"] = int(1e6 * float("0." + mgd["fracsecond"]))
             for k in mgd.keys():
                 if mgd[k]:
                     mgd[k] = int(mgd[k])
                 else:
                     mgd[k] = 0
-            d = datetime.datetime(year=mgd['year'], month=1, day=1, hour=mgd['hour'], minute=mgd['minute'],
-                                  second=mgd['second'], microsecond=mgd['microsecond'])
-            d += datetime.timedelta(days=mgd['doy'] - 1)
+            d = datetime.datetime(
+                year=mgd["year"],
+                month=1,
+                day=1,
+                hour=mgd["hour"],
+                minute=mgd["minute"],
+                second=mgd["second"],
+                microsecond=mgd["microsecond"],
+            )
+            d += datetime.timedelta(days=mgd["doy"] - 1)
             return d
         m = remjdtime.match(s)
         if m:  # MJD 14192.5273
-            d = mjdepoch + datetime.timedelta(days=float(m.groupdict()['mjd']))
+            d = mjdepoch + datetime.timedelta(days=float(m.groupdict()["mjd"]))
             return d
         m = rejdtime.match(s)
-        if m:  # JD2454192.8273  Note that the 'JD24' is found by the regex, leaving the truncated JD
-            d = mytruncjdepoch + datetime.timedelta(days=float(m.groupdict()['mytruncjd']))
+        if (
+            m
+        ):  # JD2454192.8273  Note that the 'JD24' is found by the regex, leaving the truncated JD
+            d = mytruncjdepoch + datetime.timedelta(
+                days=float(m.groupdict()["mytruncjd"])
+            )
             return d
         # None of the patterns match, try treating it as a straight number of seconds
         met = float(s)
@@ -227,14 +248,16 @@ def string2datetime(s, nocomplaint=False, correct=False):
             return None
         else:
             print(
-                "Invalid time '%s'.  Valid formats: 2004-12-05T19:43:27, 2004:329:12:15:07, 123456789.01234, JD2454192.8273, MJD14192.5273, 140308_13764" % (
-                    s), file=sys.stderr)
+                "Invalid time '%s'.  Valid formats: 2004-12-05T19:43:27, 2004:329:12:15:07, 123456789.01234, JD2454192.8273, MJD14192.5273, 140308_13764"
+                % (s),
+                file=sys.stderr,
+            )
             raise
 
 
 def string2met(s, nocomplaint=False, correct=False):
     d = string2datetime(s, nocomplaint, correct=correct)
-    if (d == None):
+    if d == None:
         return 0
     else:
         return datetime2met(d, correct=correct)
@@ -250,12 +273,15 @@ def met2datetime(met, correct=False):
         met += utcf(met, False, False)
     return swiftepoch + datetime.timedelta(seconds=met)
 
+
 def datetime2mjd(dt):
-    return (dt - mjdepoch).total_seconds()/86400
+    return (dt - mjdepoch).total_seconds() / 86400
+
 
 def mjd2datetime(mjd):
     return mjdepoch + datetime.timedelta(days=mjd)
-    
+
+
 def datetime2met(dt, correct=False):
     met = timedelta2seconds(dt - swiftepoch)
     if correct:
@@ -271,7 +297,9 @@ def met2fitsString(met, milliseconds=False, correct=False, format=fitstimeformat
         ms_string = ""
     qspformat = format.split("%q")  # Handle the %q -> seconds of day extension
     if len(qspformat) > 1:
-        sod_string = ("%05d" % (((60 * d.hour + d.minute) * 60) + d.second,)) + ms_string
+        sod_string = (
+            "%05d" % (((60 * d.hour + d.minute) * 60) + d.second,)
+        ) + ms_string
         s = sod_string.join([d.strftime(subformat) for subformat in qspformat])
     else:
         s = d.strftime(format) + ms_string
@@ -287,7 +315,7 @@ def met2mjd(met, correct=False):
 
 
 def removeNonAscii(s):
-    """ Useful utilitiy to fix up, e.g. email files"""
+    """Useful utilitiy to fix up, e.g. email files"""
     # http://stackoverflow.com/questions/1342000/how-to-replace-non-ascii-characters-in-string
     return "".join(i for i in s if ord(i) < 128)
 
@@ -361,6 +389,7 @@ def timeout(seconds_before_timeout):
 
 # Decorator to tee stdout to an open file
 
+
 def TeeStdoutDecorator(fn, __teefile):
     def inner(*args, **kwargs):
         ostdout = sys.stdout
@@ -381,15 +410,18 @@ def testTeeStdoutDecorator():
         print(x)
         print(1 / x)
 
-    testTeeStdout = TeeStdoutDecorator(testTeeStdoutUndecorated, open('/tmp/teetest', 'a'))
+    testTeeStdout = TeeStdoutDecorator(
+        testTeeStdoutUndecorated, open("/tmp/teetest", "a")
+    )
     testTeeStdout(5)
     testTeeStdout(0)
 
 
 # http://stackoverflow.com/questions/132058/showing-the-stack-trace-from-a-running-python-application
-# 
-def dumponsignal(fname='/tmp/python_trace'):
+#
+def dumponsignal(fname="/tmp/python_trace"):
     import threading, sys, traceback
+
     def dumpstacks(signal, frame):
         id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
         code = []
@@ -400,28 +432,35 @@ def dumponsignal(fname='/tmp/python_trace'):
                 if line:
                     code.append("  %s" % (line.strip()))
         print("\n".join(code))
-        open(fname, 'a').write("\n".join(code))
+        open(fname, "a").write("\n".join(code))
 
     import signal
+
     signal.signal(signal.SIGQUIT, dumpstacks)
 
 
 def main(argv):
     for s in argv:
-        print("%-30s -> %23s (corrected) = MET %f" % (
-        s, string2datetime(s, False, True), datetime2met(string2datetime(s))))
+        print(
+            "%-30s -> %23s (corrected) = MET %f"
+            % (s, string2datetime(s, False, True), datetime2met(string2datetime(s)))
+        )
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1:])
     else:
-        main(['20041225_S12345.67',
-              '2004-12-25_12345',
-              '20041225_12345',
-              '2004-12-25_12345.67',
-              '2004-12-05T19:43:27.23',
-              '2004-12-25',
-              '2004:329:12:15:07.45',
-              '123456789.01234',
-              '20041225_S12345.67'])
+        main(
+            [
+                "20041225_S12345.67",
+                "2004-12-25_12345",
+                "20041225_12345",
+                "2004-12-25_12345.67",
+                "2004-12-05T19:43:27.23",
+                "2004-12-25",
+                "2004:329:12:15:07.45",
+                "123456789.01234",
+                "20041225_S12345.67",
+            ]
+        )
