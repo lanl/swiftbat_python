@@ -211,15 +211,17 @@ class orbit:
         nTLE = len(allTLE) // 2
         self._tleByTime = [
             (
-                datetime.datetime(2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0)
+                datetime.datetime(2000 + int(allTLE[2 * i][18:20]), 
+                                  1, 1, 0, 0, 0, tzinfo=datetime.UTC)
                 + datetime.timedelta(float(allTLE[2 * i][20:32]) - 1),
                 ("Swift", allTLE[2 * i], allTLE[2 * i + 1]),
             )
             for i in range(nTLE)
         ]
-        self.pickTLE(datetime.datetime.utcnow())
+        self.pickTLE(datetime.datetime.now(datetime.UTC))
 
     def pickTLE(self, t):
+        t = t.replace(tzinfo=datetime.UTC)
         if self._tleByTime[-1][0] < t:
             self._tle = self._tleByTime[-1][1]
             self._tletimes = [
@@ -243,6 +245,7 @@ class orbit:
             _type_: _description_
         """
         global verbose
+        t = t.replace(tzinfo=datetime.UTC)
         # print(t, self._tletimes)
         if t < self._tletimes[0] or self._tletimes[1] < t:
             if verbose:
@@ -273,7 +276,7 @@ class orbit:
         try:
             # time.clock() is not what was wanted, since that doesn't give you the clock time
             checksecs = time.mktime(
-                (datetime.datetime.now() + datetime.timedelta(days=-1)).timetuple()
+                (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=-1)).timetuple()
             )
             if os.stat(tlefile).st_mtime > checksecs:
                 return  # The TLE file exists and is less than a day old
@@ -281,8 +284,8 @@ class orbit:
             pass
         tlematch = re.compile(TLEpattern[-1])
         for url_month in (
-            datetime.datetime.utcnow().strftime(TLEpattern[0]),
-            (datetime.datetime.utcnow() - datetime.timedelta(30)).strftime(
+            datetime.datetime.now(datetime.UTC).strftime(TLEpattern[0]),
+            (datetime.datetime.now(datetime.UTC) - datetime.timedelta(30)).strftime(
                 TLEpattern[0]
             ),
         ):
