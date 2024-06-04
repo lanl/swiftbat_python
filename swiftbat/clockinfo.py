@@ -123,9 +123,9 @@ class clockErrData:
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
             # Check no more than once a day
-            testage = datetime.datetime.now(datetime.UTC) - datetime.datetime.fromtimestamp(
-                os.path.getmtime(testfile)
-            )
+            testage = datetime.datetime.now(
+                datetime.UTC
+            ) - datetime.datetime.fromtimestamp(os.path.getmtime(testfile))
             if testage.total_seconds() < (86400 * test_days):
                 return
         except:

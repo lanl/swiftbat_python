@@ -211,8 +211,9 @@ class orbit:
         nTLE = len(allTLE) // 2
         self._tleByTime = [
             (
-                datetime.datetime(2000 + int(allTLE[2 * i][18:20]), 
-                                  1, 1, 0, 0, 0, tzinfo=datetime.UTC)
+                datetime.datetime(
+                    2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0, tzinfo=datetime.UTC
+                )
                 + datetime.timedelta(float(allTLE[2 * i][20:32]) - 1),
                 ("Swift", allTLE[2 * i], allTLE[2 * i + 1]),
             )
@@ -276,7 +277,9 @@ class orbit:
         try:
             # time.clock() is not what was wanted, since that doesn't give you the clock time
             checksecs = time.mktime(
-                (datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=-1)).timetuple()
+                (
+                    datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=-1)
+                ).timetuple()
             )
             if os.stat(tlefile).st_mtime > checksecs:
                 return  # The TLE file exists and is less than a day old

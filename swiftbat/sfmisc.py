@@ -98,7 +98,15 @@ def _asutc(t: datetime.datetime) -> datetime.datetime:
 def sftime(
     t, plus=None, units="days", stepby=None, nsteps=None, stepto=None, endpoint=True
 ):
-    """Convert other times to
+    """Convert other times to SkyField times
+
+    t can be one or more:
+        skyfield.time, astropy.time.Time, float(JD tai), pyephem, or str
+
+    Skyfield times can be arrays.
+    Skyfield times can be converted to Python with .utc_datetime()
+
+
 
     Args:
         t (_type_): _description_
