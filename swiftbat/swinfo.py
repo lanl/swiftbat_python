@@ -50,6 +50,7 @@ import time
 from . import swutil
 from .clockinfo import utcf
 from . import sftime, sfts, loadsfephem
+from .sfmisc import _asutc
 import astropy.units as u
 from astropy.io import fits
 from astropy import coordinates
@@ -222,12 +223,12 @@ class orbit:
         self.pickTLE(datetime.datetime.now(datetime.UTC))
 
     def pickTLE(self, t):
-        t = t.replace(tzinfo=datetime.UTC)
+        t = _asutc(t)
         if self._tleByTime[-1][0] < t:
             self._tle = self._tleByTime[-1][1]
             self._tletimes = [
                 self._tleByTime[-1][0],
-                datetime.datetime(datetime.MAXYEAR, 1, 1),
+                datetime.datetime(datetime.MAXYEAR, 1, 1, tzinfo=datetime.timezone.utc),
             ]
         else:
             for w in range(len(self._tleByTime) - 1, -1, -1):
@@ -246,7 +247,7 @@ class orbit:
             _type_: _description_
         """
         global verbose
-        t = t.replace(tzinfo=datetime.UTC)
+        t = _asutc(t)
         # print(t, self._tletimes)
         if t < self._tletimes[0] or self._tletimes[1] < t:
             if verbose:
@@ -260,14 +261,6 @@ class orbit:
         sat = sf_api.EarthSatellite(self._tle[1], self._tle[2], name=self._tle[0])
         sft = sftime(t)
         return sat, sat.at(sft)
-
-    def usetledb(self, catnum=28485):
-        """Use spacetrack tles from database (not publicly available)"""
-        import tledb  # pyright: ignore[reportMissingImports]
-
-        tles = tledb.getTLEs(catnums=[catnum], all_in_time=True)
-        self._tleByTime = [(t.epoch, t.threelines(split=True)) for t in tles]
-        return self.getSatellite(self._earthcenter.date.datetime())
 
     def satname(self):
         return self._tleByTime[0][1][0]
