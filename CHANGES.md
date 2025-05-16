@@ -1,5 +1,11 @@
 # Changes for swiftbat_python
 
+## v 0.1.5 2025-05-16
+
+- Moved all conditions for the calculation of the exposure to be inside batExposure
+- Made all returned values of batExposure be an astropy Quantity object with cm^2 units
+- Modified simbadlocation to be able to access table RA/Dec values based on lowercase or uppercase headers, which changes with different versions of astroquery
+
 ## v 0.1.4 2023-08-05
 
 - Started CHANGES.md file

@@ -181,8 +181,16 @@ def simbadlocation(objectname):
         table = Simbad.query_object(objectname)
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
+            
+        if "RA" in table.keys():
+            ra_string="RA"
+            dec_string="DEC"
+        else:
+            ra_string="ra"
+            dec_string="dec"
+        
         co = coordinates.SkyCoord(
-            table["RA"][0], table["DEC"][0], unit=(u.hour, u.deg), frame="fk5"
+            table[ra_string][0], table[dec_string][0], unit=(u.hour, u.deg), frame="fk5"
         )
         return (co.ra.degree, co.dec.degree)
     except Exception as e:
@@ -318,7 +326,6 @@ class orbit:
 
 # Source, initialized from a data string from the catalog files
 
-
 def batExposure(theta, phi):
     """
     Given theta,phi in radians, returns (open_coded_area_in_cm^2, cosfactor)
@@ -331,7 +338,11 @@ def batExposure(theta, phi):
     phi = apAngle(phi, u.rad)
 
     if np.cos(theta) < 0:
-        return (0.0, np.cos(theta))
+        return (0.0*u.cm**2, np.cos(theta))
+        
+    if theta > apAngle(90, u.deg):
+            return 0.0*u.cm**2, 0.0
+            
     # BAT dimensions
     detL = 286 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
     detW = 173 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
@@ -371,7 +382,7 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    return (area * 1e4 / 2, np.cos(theta))
+    return (u.cm**2 * area * 1e4 / 2, np.cos(theta))
 
 
 def detid2xy(detids):
@@ -569,8 +580,7 @@ class source:
     def exposure(self, ra, dec, roll):
         # returns (projected_area, cos(theta))
         (thetangle, phi) = self.thetangle_phi(ra, dec, roll)
-        if thetangle > apAngle(90, u.deg):
-            return 0.0, 0.0
+
         return batExposure(thetangle, phi)
 
     def thetangle_phi(
