@@ -122,7 +122,7 @@ ydhms = "%Y-%j-%H:%M:%S"
 
 # TLEpattern = ["ftp://heasarc.gsfc.nasa.gov/swift/data/obs/%Y_%m/",".*","auxil","SWIFT_TLE_ARCHIVE.*.gz"]
 TLEpattern = [
-    "http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
+    "https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
     ".*",
     "auxil",
     "SWIFT_TLE_ARCHIVE.*.gz",
@@ -273,17 +273,21 @@ class orbit:
     def satname(self):
         return self._tleByTime[0][1][0]
 
-    def updateTLE(self):
+    def updateTLE(self, maxage_days=10):
         global verbose
         try:
-            # time.clock() is not what was wanted, since that doesn't give you the clock time
+            if not Path(tlefile).exists():
+                if Path(tlebackup).exists():
+                    shutil.copyfile(tlebackup, tlefile)
+                    shutil.copystat(tlebackup, tlefile)
             checksecs = time.mktime(
                 (
-                    datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=-1)
+                    datetime.datetime.now(datetime.UTC)
+                    + datetime.timedelta(days=-maxage_days)
                 ).timetuple()
             )
             if os.stat(tlefile).st_mtime > checksecs:
-                return  # The TLE file exists and is less than a day old
+                return  # The TLE file exists and is less than maxage
         except:
             pass
         tlematch = re.compile(TLEpattern[-1])
@@ -307,6 +311,7 @@ class orbit:
                                 print("Copying TLEs from " + obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
                             try:
+                                # Cache the most recent TLE file
                                 shutil.copyfile(tlefile, tlebackup)
                             except:
                                 pass
