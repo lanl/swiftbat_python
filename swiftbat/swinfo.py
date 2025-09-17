@@ -338,11 +338,11 @@ def batExposure(theta, phi):
     phi = apAngle(phi, u.rad)
 
     if np.cos(theta) < 0:
-        return (0.0*u.cm**2, np.cos(theta))
+        return (0.0, np.cos(theta).value)
         
     if theta > apAngle(90, u.deg):
-            return 0.0*u.cm**2, 0.0
-            
+        return (0.0, 0.0)
+
     # BAT dimensions
     detL = 286 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
     detW = 173 * 4.2e-3  # Amynote: each det element is has length 4.2e-3 m
@@ -382,7 +382,7 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    return (u.cm**2 * area * 1e4 / 2, np.cos(theta))
+    return (area * 1e4 / 2, np.cos(theta).value)
 
 
 def detid2xy(detids):
