@@ -382,7 +382,9 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    return (area * 1e4 / 2, np.cos(theta).value)
+    area=area*1e4*u.cm**2/2
+
+    return (area.value, np.cos(theta).value)
 
 
 def detid2xy(detids):
