@@ -182,14 +182,14 @@ def simbadlocation(objectname):
         table = Simbad.query_object(objectname)
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
-            
+
         if "RA" in table.keys():
-            ra_string="RA"
-            dec_string="DEC"
+            ra_string = "RA"
+            dec_string = "DEC"
         else:
-            ra_string="ra"
-            dec_string="dec"
-        
+            ra_string = "ra"
+            dec_string = "dec"
+
         co = coordinates.SkyCoord(
             table[ra_string][0], table[dec_string][0], unit=(u.hour, u.deg), frame="fk5"
         )
@@ -330,6 +330,7 @@ class orbit:
 
 # Source, initialized from a data string from the catalog files
 
+
 def batExposure(theta, phi):
     """
     Given theta,phi in radians, returns (open_coded_area_in_cm^2, cosfactor)
@@ -343,7 +344,7 @@ def batExposure(theta, phi):
 
     if np.cos(theta) < 0:
         return (0.0, np.cos(theta).value)
-        
+
     if theta > apAngle(90, u.deg):
         return (0.0, 0.0)
 
@@ -386,7 +387,7 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    area=area*1e4*u.cm**2/2
+    area = area * 1e4 * u.cm**2 / 2
 
     return (area.value, np.cos(theta).value)
 
