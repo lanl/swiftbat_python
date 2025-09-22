@@ -251,7 +251,7 @@ class ftpDir(generalDir):
     _dirlinematch = re.compile(
         r"""(?<=^d[r-][w-].[r-][w-].r..\s).+$""", re.MULTILINE | re.IGNORECASE
     )
-    _namematch = re.compile("\S+\s*$")  # last string of nonwhite characters before eol
+    _namematch = re.compile(r"\S+\s*$")  # last string of nonwhite characters before eol
 
     def __init__(self, url):
         if not re.compile("ftp://", re.IGNORECASE).search(url):

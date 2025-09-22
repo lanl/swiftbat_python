@@ -81,6 +81,7 @@ retime_s = (
 reGeneral = re.compile(reday_s + retime_s, re.I)
 # 2004:329:12:15:07)
 
+# These times are naive but represent UTC
 swiftepoch = datetime.datetime(year=2001, month=1, day=1, hour=0, minute=0, second=0)
 swiftlaunchtime = datetime.datetime(year=2004, month=11, day=20, hour=17, minute=16)
 mjdepoch = datetime.datetime(year=1858, month=11, day=17, hour=0, minute=0, second=0)
