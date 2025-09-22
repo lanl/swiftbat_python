@@ -122,7 +122,7 @@ ydhms = "%Y-%j-%H:%M:%S"
 
 # TLEpattern = ["ftp://heasarc.gsfc.nasa.gov/swift/data/obs/%Y_%m/",".*","auxil","SWIFT_TLE_ARCHIVE.*.gz"]
 TLEpattern = [
-    "http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
+    "https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
     ".*",
     "auxil",
     "SWIFT_TLE_ARCHIVE.*.gz",
@@ -182,14 +182,14 @@ def simbadlocation(objectname):
         table = Simbad.query_object(objectname)
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
-            
+
         if "RA" in table.keys():
-            ra_string="RA"
-            dec_string="DEC"
+            ra_string = "RA"
+            dec_string = "DEC"
         else:
-            ra_string="ra"
-            dec_string="dec"
-        
+            ra_string = "ra"
+            dec_string = "dec"
+
         co = coordinates.SkyCoord(
             table[ra_string][0], table[dec_string][0], unit=(u.hour, u.deg), frame="fk5"
         )
@@ -273,17 +273,21 @@ class orbit:
     def satname(self):
         return self._tleByTime[0][1][0]
 
-    def updateTLE(self):
+    def updateTLE(self, maxage_days=10):
         global verbose
         try:
-            # time.clock() is not what was wanted, since that doesn't give you the clock time
+            if not Path(tlefile).exists():
+                if Path(tlebackup).exists():
+                    shutil.copyfile(tlebackup, tlefile)
+                    shutil.copystat(tlebackup, tlefile)
             checksecs = time.mktime(
                 (
-                    datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=-1)
+                    datetime.datetime.now(datetime.UTC)
+                    + datetime.timedelta(days=-maxage_days)
                 ).timetuple()
             )
             if os.stat(tlefile).st_mtime > checksecs:
-                return  # The TLE file exists and is less than a day old
+                return  # The TLE file exists and is less than maxage
         except:
             pass
         tlematch = re.compile(TLEpattern[-1])
@@ -307,6 +311,7 @@ class orbit:
                                 print("Copying TLEs from " + obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
                             try:
+                                # Cache the most recent TLE file
                                 shutil.copyfile(tlefile, tlebackup)
                             except:
                                 pass
@@ -325,6 +330,7 @@ class orbit:
 
 # Source, initialized from a data string from the catalog files
 
+
 def batExposure(theta, phi):
     """
     Given theta,phi in radians, returns (open_coded_area_in_cm^2, cosfactor)
@@ -338,7 +344,7 @@ def batExposure(theta, phi):
 
     if np.cos(theta) < 0:
         return (0.0, np.cos(theta).value)
-        
+
     if theta > apAngle(90, u.deg):
         return (0.0, 0.0)
 
@@ -381,7 +387,7 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    area=area*1e4*u.cm**2/2
+    area = area * 1e4 * u.cm**2 / 2
 
     return (area.value, np.cos(theta).value)
 

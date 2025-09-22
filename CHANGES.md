@@ -5,6 +5,8 @@
 - Moved all conditions for the calculation of the exposure to be inside batExposure
 - Made all returned values of batExposure be float values (both the area exposure and the cos(theta))
 - Modified simbadlocation to be able to access table RA/Dec values based on lowercase or uppercase headers, which changes with different versions of astroquery
+- Use `https` to access heasarc.
+- Update TLEs less frequently (10 days is adequate for source visibility).
 
 ## v 0.1.4 2023-08-05
 
