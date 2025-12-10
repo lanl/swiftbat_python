@@ -53,7 +53,7 @@ class clockErrData:
     clockurl = "https://heasarc.gsfc.nasa.gov/FTP/swift/calib_data/sc/bcf/clock/"
     clockhost = "heasarc.gsfc.nasa.gov"
     clockhostdir = "/caldb/data/swift/mis/bcf/clock/"
-    clockfile_regex = "swclockcor20041120v\d*.fits"
+    clockfile_regex = r"swclockcor20041120v\d*.fits"
     clockfilepattern = "swclockcor20041120v*.fits"
     # FIXME this should be derived from the dotswift params
     clocklocalsearchpath = [
@@ -117,15 +117,15 @@ class clockErrData:
             clockfile = sorted(
                 list(glob.glob(os.path.join(clockdir, self.clockfilepattern)))
             )[-1]
-            age = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(
+            age = datetime.datetime.now(datetime.UTC) - datetime.datetime.fromtimestamp(
                 os.path.getmtime(clockfile)
             )
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
             # Check no more than once a day
-            testage = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(
-                os.path.getmtime(testfile)
-            )
+            testage = datetime.datetime.now(
+                datetime.UTC
+            ) - datetime.datetime.fromtimestamp(os.path.getmtime(testfile))
             if testage.total_seconds() < (86400 * test_days):
                 return
         except:

@@ -50,6 +50,7 @@ import time
 from . import swutil
 from .clockinfo import utcf
 from . import sftime, sfts, loadsfephem
+from .sfmisc import _asutc
 import astropy.units as u
 from astropy.io import fits
 from astropy import coordinates
@@ -121,7 +122,7 @@ ydhms = "%Y-%j-%H:%M:%S"
 
 # TLEpattern = ["ftp://heasarc.gsfc.nasa.gov/swift/data/obs/%Y_%m/",".*","auxil","SWIFT_TLE_ARCHIVE.*.gz"]
 TLEpattern = [
-    "http://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
+    "https://heasarc.gsfc.nasa.gov/FTP/swift/data/obs/%Y_%m/",
     ".*",
     "auxil",
     "SWIFT_TLE_ARCHIVE.*.gz",
@@ -181,16 +182,19 @@ def simbadlocation(objectname):
         table = Simbad.query_object(objectname)
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
-            
+
+
         if "RA" in table.keys():
-            ra_string="RA"
-            dec_string="DEC"
+            ra_string = "RA"
+            dec_string = "DEC"
+            table_unit=(u.hour, u.deg)
         else:
-            ra_string="ra"
-            dec_string="dec"
-        
+            ra_string = "ra"
+            dec_string = "dec"
+            table_unit=(table[ra_string].unit, table[dec_string].unit)
+
         co = coordinates.SkyCoord(
-            table[ra_string][0], table[dec_string][0], unit=(u.hour, u.deg), frame="fk5"
+            table[ra_string][0], table[dec_string][0], unit=table_unit, frame="fk5"
         )
         return (co.ra.degree, co.dec.degree)
     except Exception as e:
@@ -219,20 +223,23 @@ class orbit:
         nTLE = len(allTLE) // 2
         self._tleByTime = [
             (
-                datetime.datetime(2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0)
+                datetime.datetime(
+                    2000 + int(allTLE[2 * i][18:20]), 1, 1, 0, 0, 0, tzinfo=datetime.UTC
+                )
                 + datetime.timedelta(float(allTLE[2 * i][20:32]) - 1),
                 ("Swift", allTLE[2 * i], allTLE[2 * i + 1]),
             )
             for i in range(nTLE)
         ]
-        self.pickTLE(datetime.datetime.utcnow())
+        self.pickTLE(datetime.datetime.now(datetime.UTC))
 
     def pickTLE(self, t):
+        t = _asutc(t)
         if self._tleByTime[-1][0] < t:
             self._tle = self._tleByTime[-1][1]
             self._tletimes = [
                 self._tleByTime[-1][0],
-                datetime.datetime(datetime.MAXYEAR, 1, 1),
+                datetime.datetime(datetime.MAXYEAR, 1, 1, tzinfo=datetime.timezone.utc),
             ]
         else:
             for w in range(len(self._tleByTime) - 1, -1, -1):
@@ -251,6 +258,7 @@ class orbit:
             _type_: _description_
         """
         global verbose
+        t = _asutc(t)
         # print(t, self._tletimes)
         if t < self._tletimes[0] or self._tletimes[1] < t:
             if verbose:
@@ -265,32 +273,30 @@ class orbit:
         sft = sftime(t)
         return sat, sat.at(sft)
 
-    def usetledb(self, catnum=28485):
-        """Use spacetrack tles from database (not publicly available)"""
-        import tledb  # pyright: ignore[reportMissingImports]
-
-        tles = tledb.getTLEs(catnums=[catnum], all_in_time=True)
-        self._tleByTime = [(t.epoch, t.threelines(split=True)) for t in tles]
-        return self.getSatellite(self._earthcenter.date.datetime())
-
     def satname(self):
         return self._tleByTime[0][1][0]
 
-    def updateTLE(self):
+    def updateTLE(self, maxage_days=10):
         global verbose
         try:
-            # time.clock() is not what was wanted, since that doesn't give you the clock time
+            if not Path(tlefile).exists():
+                if Path(tlebackup).exists():
+                    shutil.copyfile(tlebackup, tlefile)
+                    shutil.copystat(tlebackup, tlefile)
             checksecs = time.mktime(
-                (datetime.datetime.now() + datetime.timedelta(days=-1)).timetuple()
+                (
+                    datetime.datetime.now(datetime.UTC)
+                    + datetime.timedelta(days=-maxage_days)
+                ).timetuple()
             )
             if os.stat(tlefile).st_mtime > checksecs:
-                return  # The TLE file exists and is less than a day old
+                return  # The TLE file exists and is less than maxage
         except:
             pass
         tlematch = re.compile(TLEpattern[-1])
         for url_month in (
-            datetime.datetime.utcnow().strftime(TLEpattern[0]),
-            (datetime.datetime.utcnow() - datetime.timedelta(30)).strftime(
+            datetime.datetime.now(datetime.UTC).strftime(TLEpattern[0]),
+            (datetime.datetime.now(datetime.UTC) - datetime.timedelta(30)).strftime(
                 TLEpattern[0]
             ),
         ):
@@ -308,6 +314,7 @@ class orbit:
                                 print("Copying TLEs from " + obs + "/auxil/" + f)
                             httpdir.copyToFile(obs + "/auxil/" + f, tlefile)
                             try:
+                                # Cache the most recent TLE file
                                 shutil.copyfile(tlefile, tlebackup)
                             except:
                                 pass
@@ -339,7 +346,7 @@ def batExposure(theta, phi):
 
     if np.cos(theta) < 0:
         return (0.0, np.cos(theta).value)
-        
+
     if theta > apAngle(90, u.deg):
         return (0.0, 0.0)
 
@@ -382,7 +389,8 @@ def batExposure(theta, phi):
         area = 0
     # if you want to see what the corners do: area = max(0,deltaX * deltaY) - area
     # multiply by 1e4 for cm^2, 1/2 for open area
-    area=area*1e4*u.cm**2/2
+
+    area = area * 1e4 * u.cm**2 / 2
 
     return (area.value, np.cos(theta).value)
 
