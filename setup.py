@@ -48,7 +48,7 @@ setup(
     entry_points={"console_scripts": ["swinfo=swiftbat.swinfo:swinfo_main"]},
     install_requires=[
         "astropy>=5",
-        "astroquery",
+        "astroquery>0.4.8",
         "numpy",
         "python-dateutil",
         "skyfield>=1.4",
