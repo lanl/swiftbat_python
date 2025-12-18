@@ -35,7 +35,7 @@ except FileNotFoundError:
 
 setup(
     name="swiftbat",
-    version="0.1.5",
+    version="0.1.6",
     packages=["swiftbat"],
     package_data={"": ["catalog", "recent_bcttb.fits.gz"]},
     url="https://github.com/lanl/swiftbat_python/",
@@ -48,7 +48,7 @@ setup(
     entry_points={"console_scripts": ["swinfo=swiftbat.swinfo:swinfo_main"]},
     install_requires=[
         "astropy>=5",
-        "astroquery",
+        "astroquery>0.4.8",
         "numpy",
         "python-dateutil",
         "skyfield>=1.4",
