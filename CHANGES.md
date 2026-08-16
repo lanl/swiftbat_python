@@ -1,5 +1,13 @@
 # Changes for swiftbat_python
 
+## v 0.1.7 2026-08-15
+- Updated from old setup.py to pyproject.toml
+- Fixed timezone aware vs naive comparison in clockfile freshness test.
+- General version updating
+
+## v 0.1.6 2025-12-17
+- Update case and hours/degrees units for Simbad queries.
+
 ## v 0.1.5 2025-05-16
 
 - Moved all conditions for the calculation of the exposure to be inside batExposure

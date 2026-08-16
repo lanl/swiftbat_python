@@ -868,7 +868,7 @@ class PointingEntry:
             end = max(times)
             queries = [swto.ObsQuery(begin=begin, end=end)]
         else:
-            queries = [swto.ObsQuery(t) for t in times]
+            queries = [swto.ObsQuery(begin=t) for t in times]
 
         result = []
         for query in queries:

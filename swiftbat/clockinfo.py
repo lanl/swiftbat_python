@@ -104,7 +104,7 @@ class clockErrData:
         )
         return -tcorr, caveats
 
-    def updateclockfiles(self, clockdir, ifolderthan_days=30, test_days=1):
+    def updateclockfiles(self, clockdir, ifolderthan_days=30, test_days=7):
         """
         Update the clock files if the current clockfile is old and we haven't checked recently for new ones
         :param clockdir:
@@ -118,17 +118,16 @@ class clockErrData:
                 list(glob.glob(os.path.join(clockdir, self.clockfilepattern)))
             )[-1]
             age = datetime.datetime.now(datetime.UTC) - datetime.datetime.fromtimestamp(
-                os.path.getmtime(clockfile)
-            )
+                os.path.getmtime(clockfile), tz=datetime.UTC)
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
-            # Check no more than once a day
+            # Check no more than once a week
             testage = datetime.datetime.now(
                 datetime.UTC
-            ) - datetime.datetime.fromtimestamp(os.path.getmtime(testfile))
+            ) - datetime.datetime.fromtimestamp(os.path.getmtime(testfile), tz=datetime.UTC)
             if testage.total_seconds() < (86400 * test_days):
                 return
-        except:
+        except IndexError:
             pass
         try:
             clockremotedir = httpDir(self.clockurl)
