@@ -50,6 +50,12 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/lanl/swiftbat_python/"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+    "pytest-cov>=7.0",
+]
+
 [project.scripts]
 swinfo = "swiftbat.swinfo:swinfo_main"
 
