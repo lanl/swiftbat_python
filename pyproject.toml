@@ -45,6 +45,7 @@ dependencies = [
     "python-dateutil",
     "skyfield>=1.4",
     "swifttools",
+    "truststore>=0.10.4",
 ]
 
 [project.urls]

@@ -872,7 +872,7 @@ class PointingEntry:
 
         result = []
         for query in queries:
-            if query.submit():
+            if query.submit() or query.status.status == 'Accepted':
                 result.extend(cls.listfromquery(query))
         return result
 
@@ -939,6 +939,7 @@ def usage(progname):
 
 # @swutil.timeout(60)
 def swinfo_main(argv=None, debug=None):
+    swutil.trust_proxy()
     global verbose
     global terse
     global sourcecat
@@ -1003,6 +1004,7 @@ def swinfo_main(argv=None, debug=None):
                 orbits = orbit()
                 # print("Orbit read")
             elif o in ("-s", "--source"):
+                # FIXME Use batcatalog.BATCatalog instead
                 loadsourcecat()
                 try:
                     # print(v)
@@ -1358,14 +1360,12 @@ def checkParse():
 
 
 if __name__ == "__main__":
-    # for i in range(len(sys.argv)) :
-    #    print("%d: %s" % (i, sys.argv[i]))
-    # Turn on debugging
     debug = None
-    debug = open("/tmp/swinfo.debug", "a")
+    # debug = open("/tmp/swinfo.debug", "a")
     # if debug:
     #     swutil.dumponsignal(fname="/tmp/swinfo.debug")
     #     main = swutil.TeeStdoutDecorator(main, debug)
+    swutil.trust_proxy()
     if len(sys.argv) > 1:
         swinfo_main(sys.argv, debug=debug)
     else:

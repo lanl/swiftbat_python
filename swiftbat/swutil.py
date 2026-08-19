@@ -92,6 +92,13 @@ _jd_mjd_diff = 2400000.5
 fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
+def trust_proxy():
+    """Trust the zscalar or other MITM proxy
+    """
+    # Handle proxy MITM from zscaler etc.
+    import truststore
+    truststore.inject_into_ssl()
+
 
 def any2datetime(arg, correct=True, mjd=False, jd=False):
     """Change the argument into a (naive) datetime
