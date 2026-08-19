@@ -183,11 +183,10 @@ def simbadlocation(objectname):
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
 
-        
         ra_string = "ra"
         dec_string = "dec"
-            
-        table_unit=(table[ra_string].unit, table[dec_string].unit)
+
+        table_unit = (table[ra_string].unit, table[dec_string].unit)
 
         co = coordinates.SkyCoord(
             table[ra_string][0], table[dec_string][0], unit=table_unit, frame="fk5"
@@ -328,6 +327,7 @@ class orbit:
 
 
 # Source, initialized from a data string from the catalog files
+
 
 def batExposure(theta, phi):
     """
@@ -872,7 +872,7 @@ class PointingEntry:
 
         result = []
         for query in queries:
-            if query.submit() or query.status.status == 'Accepted':
+            if query.submit() or query.status.status == "Accepted":
                 result.extend(cls.listfromquery(query))
         return result
 

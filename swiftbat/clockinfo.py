@@ -118,13 +118,16 @@ class clockErrData:
                 list(glob.glob(os.path.join(clockdir, self.clockfilepattern)))
             )[-1]
             age = datetime.datetime.now(datetime.UTC) - datetime.datetime.fromtimestamp(
-                os.path.getmtime(clockfile), tz=datetime.UTC)
+                os.path.getmtime(clockfile), tz=datetime.UTC
+            )
             if age.total_seconds() < (86400 * ifolderthan_days):
                 return
             # Check no more than once a week
             testage = datetime.datetime.now(
                 datetime.UTC
-            ) - datetime.datetime.fromtimestamp(os.path.getmtime(testfile), tz=datetime.UTC)
+            ) - datetime.datetime.fromtimestamp(
+                os.path.getmtime(testfile), tz=datetime.UTC
+            )
             if testage.total_seconds() < (86400 * test_days):
                 return
         except IndexError:

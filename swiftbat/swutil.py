@@ -92,11 +92,12 @@ _jd_mjd_diff = 2400000.5
 fitstimeformat = r"%Y-%m-%dT%H:%M:%S"  # for strftime
 yearDOYsecstimeformat = r"%Y_%j_%q"  # %q -> SOD in 00000 (non-standard)
 
+
 def trust_proxy():
-    """Trust the zscalar or other MITM proxy
-    """
+    """Trust the zscalar or other MITM proxy"""
     # Handle proxy MITM from zscaler etc.
     import truststore
+
     truststore.inject_into_ssl()
 
 
@@ -238,9 +239,7 @@ def string2datetime(s, nocomplaint=False, correct=False):
             d = mjdepoch + datetime.timedelta(days=float(m.groupdict()["mjd"]))
             return d
         m = rejdtime.match(s)
-        if (
-            m
-        ):  # JD2454192.8273  Note that the 'JD24' is found by the regex, leaving the truncated JD
+        if m:  # JD2454192.8273  Note that the 'JD24' is found by the regex, leaving the truncated JD
             d = mytruncjdepoch + datetime.timedelta(
                 days=float(m.groupdict()["mytruncjd"])
             )
