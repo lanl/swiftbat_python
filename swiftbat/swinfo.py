@@ -183,11 +183,10 @@ def simbadlocation(objectname):
         if len(table) != 1:
             raise RuntimeError(f"No unique match for {objectname}")
 
-        
         ra_string = "ra"
         dec_string = "dec"
-            
-        table_unit=(table[ra_string].unit, table[dec_string].unit)
+
+        table_unit = (table[ra_string].unit, table[dec_string].unit)
 
         co = coordinates.SkyCoord(
             table[ra_string][0], table[dec_string][0], unit=table_unit, frame="fk5"
@@ -328,6 +327,7 @@ class orbit:
 
 
 # Source, initialized from a data string from the catalog files
+
 
 def batExposure(theta, phi):
     """
@@ -868,11 +868,11 @@ class PointingEntry:
             end = max(times)
             queries = [swto.ObsQuery(begin=begin, end=end)]
         else:
-            queries = [swto.ObsQuery(t) for t in times]
+            queries = [swto.ObsQuery(begin=t) for t in times]
 
         result = []
         for query in queries:
-            if query.submit():
+            if query.submit() or query.status.status == "Accepted":
                 result.extend(cls.listfromquery(query))
         return result
 
@@ -939,6 +939,7 @@ def usage(progname):
 
 # @swutil.timeout(60)
 def swinfo_main(argv=None, debug=None):
+    swutil.trust_proxy()
     global verbose
     global terse
     global sourcecat
@@ -1003,6 +1004,7 @@ def swinfo_main(argv=None, debug=None):
                 orbits = orbit()
                 # print("Orbit read")
             elif o in ("-s", "--source"):
+                # FIXME Use batcatalog.BATCatalog instead
                 loadsourcecat()
                 try:
                     # print(v)
@@ -1358,14 +1360,12 @@ def checkParse():
 
 
 if __name__ == "__main__":
-    # for i in range(len(sys.argv)) :
-    #    print("%d: %s" % (i, sys.argv[i]))
-    # Turn on debugging
     debug = None
-    debug = open("/tmp/swinfo.debug", "a")
+    # debug = open("/tmp/swinfo.debug", "a")
     # if debug:
     #     swutil.dumponsignal(fname="/tmp/swinfo.debug")
     #     main = swutil.TeeStdoutDecorator(main, debug)
+    swutil.trust_proxy()
     if len(sys.argv) > 1:
         swinfo_main(sys.argv, debug=debug)
     else:
